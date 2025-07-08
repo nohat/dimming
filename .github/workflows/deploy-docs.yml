@@ -49,9 +49,7 @@ jobs:
       
       - name: Setup Pages
         id: pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
+        uses: actions/configure-pages@v4
         continue-on-error: true
       
       - name: Build with MkDocs
