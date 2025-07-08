@@ -69,7 +69,79 @@ light.move_color_temperature:
 
 Current complex workaround:
 ```yaml
-# 20+ lines of complex logic with globals and intervals
+# Current ESPHome implementation requires complex workaround
+globals:
+  - id: dimming_active
+    type: bool
+    initial_value: 'false'
+  - id: dimming_direction
+    type: int
+    initial_value: '0'  # -1 = down, 0 = stop, 1 = up
+  - id: current_brightness
+    type: float
+    initial_value: '0.0'
+  - id: dimming_speed
+    type: float
+    initial_value: '0.05'  # 5% per step
+
+interval:
+  - interval: 100ms
+    then:
+      - if:
+          condition:
+            lambda: 'return id(dimming_active);'
+          then:
+            - lambda: |
+                float new_brightness = id(current_brightness) + (id(dimming_direction) * id(dimming_speed));
+                if (new_brightness > 1.0) new_brightness = 1.0;
+                if (new_brightness < 0.0) new_brightness = 0.0;
+                id(current_brightness) = new_brightness;
+                auto call = id(my_light).turn_on();
+                call.set_brightness(new_brightness);
+                call.perform();
+
+binary_sensor:
+  - platform: gpio
+    pin: 
+      number: GPIO12
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    id: button_up
+    on_press:
+      - lambda: |
+          id(dimming_active) = true;
+          id(dimming_direction) = 1;
+    on_release:
+      - lambda: |
+          id(dimming_active) = false;
+          id(dimming_direction) = 0;
+
+  - platform: gpio
+    pin: 
+      number: GPIO13
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    id: button_down
+    on_press:
+      - lambda: |
+          id(dimming_active) = true;
+          id(dimming_direction) = -1;
+    on_release:
+      - lambda: |
+          id(dimming_active) = false;
+          id(dimming_direction) = 0;
+
+light:
+  - platform: monochromatic
+    output: pwm_output
+    id: my_light
+    on_turn_on:
+      - lambda: |
+          id(current_brightness) = id(my_light).current_values.get_brightness();
 ```
 
 Proposed simple solution:
