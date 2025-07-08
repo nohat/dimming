@@ -11,7 +11,13 @@ theme:
     - navigation.sections
     - navigation.expand
     - navigation.top
+    - navigation.indexes  # Enable section index pages
+    - navigation.instant  # Instant loading
+    - navigation.tracking # Anchor tracking in URL
     - toc.integrate
+    - toc.follow          # Sidebar follows scroll
+    - search.highlight    # Highlight search terms
+    - search.share        # Share search results
   palette:
     - scheme: default
       primary: blue
@@ -29,16 +35,19 @@ theme:
 nav:
   - Home: index.md
   - Current State:
+    - current-state/index.md
     - Community Discussions: current-state/community_discussions.md
     - Overview: current-state/current_state.md
     - Challenges & Risks: current-state/challenges.md
     - Core Contributors: current-state/core_contribs.md
   - Architecture:
+    - architecture/index.md
     - Core Proposal: architecture/architecture.md
     - Project Concepts: architecture/pro_concepts.md
     - Scope & Requirements: architecture/scope.md
     - Project Plan: architecture/project_plan.md
   - Technical Strategy:
+    - technical-strategy/index.md
     - Home Assistant Strategy: technical-strategy/ha_strategy.md
     - ESPHome Proposal: technical-strategy/esphome_proposal.md
     - ESPHome Strategy: technical-strategy/esphome_strategy.md
@@ -46,6 +55,7 @@ nav:
     - Non-linear Dimming: technical-strategy/nonlinear_dimming.md
     - Simultaneous Dimming: technical-strategy/simultaneous_dimming.md
   - Integration Guides:
+    - integration-guides/index.md
     - Top Lighting Integrations: integration-guides/top_lighting_integrations.md
     - ZHA & Z-Wave: integration-guides/zha_zwave.md
     - Zigbee2MQTT: integration-guides/zigbee2mqtt.md
@@ -53,12 +63,15 @@ nav:
     - Tuya: integration-guides/tuya.md
     - Capability Matrix: integration-guides/capability_matrix.md
   - Implementation:
+    - implementation/index.md
     - Engineering Execution: implementation/eng_execution.md
     - Execution Plan B: implementation/execution_plan_b.md
   - Future Enhancements:
+    - future-enhancements/index.md
     - Control Mapping: future-enhancements/control_mapping.md
     - Auto-Detected Controller Defaults: future-enhancements/defaults.md
   - Resources:
+    - resources/index.md
     - Kickoff Post: resources/kickoff_post.md
 
 markdown_extensions:
@@ -73,3 +86,7 @@ markdown_extensions:
       alternate_style: true
   - toc:
       permalink: true
+
+plugins:
+  - search
+  - macros
