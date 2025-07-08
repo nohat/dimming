@@ -1,3 +1,8 @@
+---
+description: Comprehensive analysis of Home Assistant's current lighting control limitations and user experience gaps
+summary: Current state analysis of dynamic dimming in Home Assistant, including limitations and workarounds
+---
+
 # Current State of Dynamic Dimming in Home Assistant
 
 ## Overview

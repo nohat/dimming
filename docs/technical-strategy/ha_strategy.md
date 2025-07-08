@@ -1,3 +1,13 @@
+---
+description: Core Home Assistant integration approach featuring the centralized LightTransitionManager component for unified lighting control
+summary: Technical strategy for implementing universal lighting control in Home Assistant core
+priority: essential
+---
+
+<!-- summary: Core Home Assistant integration approach featuring the centralized LightTransitionManager component -->
+
+# Home Assistant Strategy
+
 My search confirms the current situation: Home Assistant typically *passes* the `transition` parameter to the device/integration. If the device doesn't support it, it's often simply ignored, and the light snaps to the new state. There are community scripts (like "Light Fader") that try to simulate this by sending rapid, incremental commands, but this is not a built-in core HA feature.
 
 So, yes, we absolutely should "smarten up" Home Assistant to provide better, consistent transition and dynamic control handling for all lights, regardless of native device support. This is a critical piece of the puzzle for a truly unified and high-quality user experience.

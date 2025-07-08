@@ -1,3 +1,11 @@
+---
+description: Comprehensive comparison of native dimming capabilities across all lighting integrations including transition support and dynamic control features
+summary: Device and protocol capability matrix for universal lighting control implementation
+priority: important
+---
+
+# Capability Matrix
+
 Here's a capability matrix outlining the relevant declarations and concrete examples for different combinations of light features, focusing on `transition` and dynamic control (`move`/`stop`). This assumes the proposed new `LightEntityFeature` flags and the `LightTransitionManager` in Home Assistant Core are in place.
 
 ### New Proposed `LightEntityFeature` Flags:

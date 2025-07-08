@@ -1,3 +1,7 @@
+---
+render_macros: false
+---
+
 # Analysis of Tuya API Support for Continuous Lighting Dimming and Chinese User Community Sentiment
 
 ## I. Executive Summary
@@ -888,11 +892,11 @@ automation:
           entity_id: light.living_room_tuya
         data:
           direction: >-
-            {% if states('light.living_room_tuya') | int < 50 %}
+            {% raw %}{% if states('light.living_room_tuya') | int < 50 %}{% endraw %}
               up
-            {% else %}
+            {% raw %}{% else %}{% endraw %}
               down
-            {% endif %}
+            {% raw %}{% endif %}{% endraw %}
           rate: 50
     
   - alias: "Stop Dimming on Release"
@@ -954,16 +958,16 @@ automation:
         target:
           entity_id: light.adaptive_tuya
         data:
-          direction: "{{ states('input_select.dimmer_direction') }}"
+          direction: "{% raw %}{{ states('input_select.dimmer_direction') }}{% endraw %}"
           rate: >-
-            {% set hour = now().hour %}
-            {% if hour >= 22 or hour <= 6 %}
+            {% raw %}{% set hour = now().hour %}{% endraw %}
+            {% raw %}{% if hour >= 22 or hour <= 6 %}{% endraw %}
               25  # Slow dimming during sleep hours
-            {% elif hour >= 7 and hour <= 9 %}
+            {% raw %}{% elif hour >= 7 and hour <= 9 %}{% endraw %}
               75  # Fast dimming during morning routine
-            {% else %}
+            {% raw %}{% else %}{% endraw %}
               50  # Normal dimming during day
-            {% endif %}
+            {% raw %}{% endif %}{% endraw %}
 ```
 
 ### C. Integration-Specific Configuration Examples
@@ -1088,8 +1092,8 @@ light:
     lights:
       advanced_tuya_bedroom:
         friendly_name: "Bedroom Advanced Tuya"
-        level_template: "{{ states('light.bedroom_tuya') }}"
-        value_template: "{{ states('light.bedroom_tuya') }}"
+        level_template: "{% raw %}{{ states('light.bedroom_tuya') }}{% endraw %}"
+        value_template: "{% raw %}{{ states('light.bedroom_tuya') }}{% endraw %}"
         turn_on:
           service: script.tuya_advanced_turn_on
           data:

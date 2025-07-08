@@ -1,3 +1,9 @@
+---
+description: Main technical proposal for universal lighting control - a unified architecture for intuitive and performant dynamic lighting control in Home Assistant
+summary: Core architectural document proposing a fundamental enhancement to Home Assistant's lighting control system
+priority: essential
+---
+
 # Architectural Proposal: Universal Smart Lighting Control
 
 ## Subject: A Unified Architecture for Intuitive and Performant Dynamic Lighting Control
