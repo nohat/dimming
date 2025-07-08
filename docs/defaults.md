@@ -1,124 +1,240 @@
-# Better User Experience for Setup with Auto-Populated Defaults
+# Control Mapping: Intelligent Defaults and Auto-Configuration
 
-A truly evolved Home Assistant should go beyond raw event linking and offer intelligent, discoverable defaults based on the device types being paired. This would drastically improve the out-of-box experience.
+## Overview
 
-The core idea is to leverage Home Assistant's existing knowledge about device capabilities and common usage patterns.
+This document outlines future enhancements to the Control Mapping system that would provide intelligent, auto-populated defaults based on device capabilities and common usage patterns. These features would build upon the core Control Mapping implementation to deliver an exceptional out-of-box experience.
 
-### Vision: Intelligent Control Suggestions
+## Relationship to Core Control Mapping
 
-Instead of merely presenting raw event actions, the UI would:
+These enhancements extend the Phase 3 User Interface implementation described in `control_mapping.md`, specifically enhancing the Mapping Wizard (PR 3.2) with intelligent suggestions and automated configuration capabilities.
+
+## Enhanced User Experience Goals
+
+Transform the Control Mapping wizard from a manual configuration tool into an intelligent assistant that:
 
 1.  **Recognize Controller Type:** Identify the connected device as a "dimmer switch," "scene remote," "rotary controller," etc., based on its declared capabilities (e.g., exposed event entities, device class, or integration-specific metadata).
 2.  **Infer Common Actions:** For recognized controller types, suggest common mappings for its standard buttons/controls to relevant light actions.
 3.  **Pre-populate Light Action Defaults:** When a light is selected as a target, pre-fill the `dynamic_control` parameters with sensible defaults (e.g., `logarithmic` curve, `medium` speed for dimming, `toggle` for on/off).
 
-### How it Would Work in the UI (User Walkthrough):
+1. **Recognizes Controller Types**: Automatically identifies device capabilities and common usage patterns
+2. **Suggests Optimal Mappings**: Provides pre-configured mappings based on device type and target lights
+3. **Populates Intelligent Defaults**: Auto-fills dynamic control parameters with perceptually optimized settings
+4. **Enables One-Click Setup**: Allows complete configuration with minimal user interaction
 
-Imagine you've just added a **Lutron Pico Remote** and a **Light Group (Living Room Lights)**.
+## Future Enhancement Phases
 
-1.  **Navigate to the Controller Device:**
+### Phase 6: Intelligent Configuration (Future)
 
-      * Go to **Settings \> Devices & Services \> Devices**.
-      * Select your **Lutron Pico Remote** device (e.g., `Pico Living Room Dimmer`).
-      * Click on **"Configure Controls"**.
+Building upon the core Control Mapping implementation, this phase would add intelligent automation to the configuration process.
 
-2.  **Intelligent Mapping Suggestions:**
+#### PR 6.1: Controller Profile System
+**File:** `homeassistant/helpers/controller_profiles.py`
 
-      * Instead of a blank slate, the wizard (from **Phase 5, PR 5.3**) immediately presents a set of **suggested mappings** for this specific Pico remote, targeting a *default light* (which could be the most recently added dimmable light, or prompted selection):
+**Implementation:**
+```python
+class ControllerProfile(TypedDict):
+    """Device-specific mapping suggestions and defaults."""
+    device_model_patterns: List[str]
+    device_class: str  # "dimmer", "scene_controller", "rotary", etc.
+    suggested_mappings: List[SuggestedMapping]
+    compatibility_matrix: Dict[str, List[str]]  # light types -> recommended features
 
-      * **Suggested Mapping 1: Top Button (On) -\> Toggle Living Room Lights**
+class SuggestedMapping(TypedDict):
+    """Pre-configured mapping suggestion."""
+    controller_event: ControllerEventData
+    light_action_template: Dict[str, Any]
+    priority: int  # For ordering suggestions
+    description: str  # User-friendly description
+```
 
-          * **Controller Action:** `event.pico_living_room_dimmer_events` with `event_data: {action: "button_on_press"}`
-          * **Target Light:** `light.living_room_wiz_lights`
-          * **Proposed Light Action:** `Toggle`
+**Profile Storage:**
+- Integration-specific profiles in `homeassistant/components/{integration}/controller_profiles/`
+- Community-contributed profiles via Home Assistant Community Store
+- User-customizable profile overrides
 
-      * **Suggested Mapping 2: Bottom Button (Off) -\> Turn Off Living Room Lights**
+#### PR 6.2: Suggestion Engine
+**File:** `homeassistant/core/control_mapping/suggestions.py`
 
-          * **Controller Action:** `event.pico_living_room_dimmer_events` with `event_data: {action: "button_off_press"}`
-          * **Target Light:** `light.living_room_wiz_lights`
-          * **Proposed Light Action:** `Turn Off`
+**Features:**
+- Device compatibility analysis
+- Context-aware suggestions (room, light types, existing mappings)
+- Machine learning from user configuration patterns
+- Community usage pattern integration
 
-      * **Suggested Mapping 3: Dim Up Button (Hold) -\> Dim Up Living Room Lights**
+### Phase 7: Advanced Intelligence (Future)
 
-          * **Controller Action:** `event.pico_living_room_dimmer_events` with `event_data: {action: "button_dim_up_start"}`
-          * **Target Light:** `light.living_room_wiz_lights`
-          * **Proposed Light Action (auto-populated `dynamic_control`):**
-            ```yaml
-            dynamic_control:
-              type: move
-              direction: up
-              speed: medium # Sensible default speed
-              curve: logarithmic # Sensible default for perceived dimming
-            ```
+#### PR 7.1: Adaptive Learning
+**Features:**
+- Learn from user modifications to suggestions
+- Improve suggestions based on usage patterns
+- Community-driven improvement of default profiles
+- Personalized configuration recommendations
 
-      * **Suggested Mapping 4: Dim Up Button (Release) -\> Stop Dimming**
+#### PR 7.2: Context-Aware Automation
+**Features:**
+- Room-based automatic target selection
+- Time-of-day dependent configurations
+- Integration with Home Assistant Areas and Zones
+- Seasonal lighting profile adjustments
 
-          * **Controller Action:** `event.pico_living_room_dimmer_events` with `event_data: {action: "button_dim_up_stop"}`
-          * **Target Light:** `light.living_room_wiz_lights`
-          * **Proposed Light Action:**
-            ```yaml
-            dynamic_control:
-              type: stop
-            ```
+## Enhanced User Experience Flow
 
-      * (And similar for Dim Down)
+### Scenario: Zero-Configuration Setup
 
-3.  **User Interaction with Suggestions:**
+**User adds a Lutron Pico Remote to their living room with existing Wiz light group.**
 
-      * Each suggestion would have "Accept," "Modify," and "Ignore" options.
-      * Clicking "Modify" opens the detailed action editor, pre-filled with the suggestion, allowing fine-tuning (e.g., changing speed, choosing a `square_law` curve instead of `logarithmic`).
-      * The user can then "Accept All Suggestions" or go through them one by one.
+#### Step 1: Automatic Detection
+- System recognizes Pico as "5-button dimmer controller"
+- Identifies nearby "Living Room Lights" group in same area
+- Loads Lutron Pico controller profile
 
-### Architectural Implications for Auto-Population:
+#### Step 2: Intelligent Suggestions
+The "Configure Controls" wizard presents a complete suggested configuration:
 
-This requires a new layer of "intelligence" or metadata.
+**Suggested Configuration: "Living Room Dimmer Setup"**
+- **On Button** → Toggle Living Room Lights
+- **Off Button** → Turn Off Living Room Lights  
+- **Dim Up (Hold)** → Smooth Dim Up (logarithmic curve, medium speed)
+- **Dim Up (Release)** → Stop Dimming
+- **Dim Down (Hold)** → Smooth Dim Down (logarithmic curve, medium speed)
+- **Dim Down (Release)** → Stop Dimming
+- **Favorite Button** → Activate "Movie Time" scene (if available)
 
-  * **Core - `ControllerProfile` Metadata:**
-      * **Concept:** A new, optional metadata structure within Home Assistant that integrations can provide for their controller devices. This profile would map *internal controller actions* (e.g., button press codes) to the *standardized `ControllerEventData`* (from **Phase 5, PR 5.1**) *and* suggest default `light_action` payloads for common light control scenarios.
-      * **Definition:** Could be a JSON file or a Python dictionary within the integration, perhaps part of the `device_info` or a new `controller_info` property on the `DeviceEntry`.
-      * **Example (Conceptual):**
-        ```json
-        # homeassistant/components/lutron_caseta/controller_profiles/pico_dimmer.json
-        {
-          "device_model_identifiers": ["Lutron_Pico_Dimmer"],
-          "suggested_mappings": [
-            {
-              "controller_event_data": {"action": "button_on_press", "action_id": "top_button"},
-              "light_action_template": {"toggle": {}}
-            },
-            {
-              "controller_event_data": {"action": "button_off_press", "action_id": "bottom_button"},
-              "light_action_template": {"turn_off": {}}
-            },
-            {
-              "controller_event_data": {"action": "button_dim_up_start", "action_id": "middle_up"},
-              "light_action_template": {
-                "dynamic_control": {
-                  "type": "move",
-                  "direction": "up",
-                  "speed": "medium",
-                  "curve": "logarithmic"
-                }
-              }
-            },
-            {
-              "controller_event_data": {"action": "button_dim_up_stop", "action_id": "middle_up"},
-              "light_action_template": {
-                "dynamic_control": {
-                  "type": "stop"
-                }
-              }
-            }
-            // ... similar for dim_down, favorite, etc.
-          ]
+#### Step 3: One-Click Activation
+- User clicks "Accept All" → Complete setup in 5 seconds
+- Alternative: Individual modification of any suggestion
+- Test mode: Try configurations before committing
+
+## Technical Implementation Strategy
+
+### Controller Profile Architecture
+
+#### Profile Definition Structure
+```json
+{
+  "profile_id": "lutron_pico_5button_v1",
+  "display_name": "Lutron Pico 5-Button Remote",
+  "device_patterns": {
+    "manufacturer": "Lutron",
+    "model_patterns": ["PJ2-.*-L01", "Pico.*Remote"]
+  },
+  "controller_class": "scene_dimmer",
+  "default_mappings": [
+    {
+      "event_data": {"action": "single", "action_id": "on"},
+      "light_action": {"toggle": {}},
+      "description": "Toggle lights on/off",
+      "priority": 1
+    },
+    {
+      "event_data": {"action": "long_press", "action_id": "dim_up"},
+      "light_action": {
+        "dynamic_control": {
+          "type": "move",
+          "direction": "up", 
+          "curve": "logarithmic",
+          "speed": "medium"
         }
-        ```
-  * **Frontend Logic:** The "Configure Controls" UI (PR 5.3) would:
-    1.  Read the `ControllerProfile` (if available) for the selected controller device.
-    2.  Based on the `suggested_mappings` and the selected `target_light_entity_id` (perhaps it defaults to the first dimmable light group/entity), it generates the pre-filled `homeassistant.link_control` service calls.
-    3.  Present these as "suggestions" to the user, allowing easy acceptance or modification.
-  * **"Learn Mode" for Actions:** The UI could also offer a "Learn Mode" button. When activated, Home Assistant would listen for *any* event from that controller for a few seconds. When an event occurs, it captures its `event_data` and offers to use *that specific observed action* for the mapping. This is great for unusual buttons or devices without pre-defined profiles.
+      },
+      "description": "Smooth dim up",
+      "priority": 2
+    }
+  ],
+  "advanced_features": {
+    "native_binding_support": true,
+    "multi_target_capable": true,
+    "scene_integration": true
+  }
+}
+```
 
-This approach makes the powerful control mapping features accessible to a much broader user base, reducing the cognitive load and setup time significantly.
+#### Target Selection Intelligence
+```python
+class TargetSelector:
+    """Intelligent target light selection."""
+    
+    def suggest_targets(self, controller_device: Device) -> List[LightTarget]:
+        """Suggest appropriate light targets."""
+        # Area-based selection
+        # Recent activity analysis  
+        # Compatibility checking
+        # User preference learning
+```
 
------
+### Suggestion Engine Components
+
+#### Compatibility Matrix
+- Controller capabilities × Light features → Recommended configurations
+- Protocol optimization (native vs. simulated)
+- Performance considerations for different device combinations
+
+#### Community Intelligence
+- Anonymized usage pattern collection
+- Popular configuration sharing
+- Best practice recommendations
+- Community-contributed profiles
+
+### User Interface Enhancements
+
+#### Enhanced Wizard Flow
+1. **Auto-Detection**: "We found a Lutron Pico Remote in your Living Room"
+2. **Context Awareness**: "This pairs well with your Living Room Lights"
+3. **Suggestion Preview**: Visual preview of suggested mappings
+4. **Bulk Configuration**: "Accept All" vs. individual customization
+5. **Test Mode**: Try before commit functionality
+
+#### Progressive Disclosure
+- **Basic Mode**: One-click suggested configurations
+- **Advanced Mode**: Full customization with intelligent defaults
+- **Expert Mode**: Raw event mapping for power users
+
+## Benefits and Impact
+
+### User Experience Improvements
+- **Setup Time**: Reduce from 5+ minutes to <30 seconds for common scenarios
+- **Success Rate**: Increase successful configurations through intelligent defaults
+- **Discoverability**: Surface advanced features through contextual suggestions
+- **Accessibility**: Lower technical barriers for all user skill levels
+
+### Technical Benefits
+- **Reduced Support Load**: Fewer configuration-related issues
+- **Community Growth**: Easier onboarding for new users
+- **Ecosystem Development**: Encourage integration developers to provide profiles
+- **Data-Driven Improvement**: Learn from real usage patterns
+
+### Integration with Core Features
+- **Light Groups**: Automatic group detection and targeting
+- **Areas/Zones**: Context-aware suggestions based on physical layout  
+- **Scenes**: Integration with existing scene configurations
+- **Automations**: Suggest automation enhancements alongside control mapping
+
+## Implementation Roadmap
+
+### Phase 6.1: Foundation (3-4 months)
+- Controller profile system architecture
+- Basic suggestion engine
+- Enhanced wizard UI with suggestion support
+
+### Phase 6.2: Intelligence (2-3 months)  
+- Machine learning integration
+- Community data collection
+- Advanced compatibility analysis
+
+### Phase 7: Advanced Features (3-4 months)
+- Adaptive learning system
+- Context-aware automation
+- Community contribution platform
+
+## Success Metrics
+
+### Quantitative Targets
+- **Configuration Time**: <30 seconds for 80% of setups
+- **User Success Rate**: >95% successful first-time configurations  
+- **Feature Adoption**: >60% of users accept suggested configurations
+- **Community Contribution**: 100+ community-contributed profiles
+
+### Qualitative Goals
+- Seamless, intuitive setup experience
+- Professional-grade lighting behavior out-of-box
+- Reduced technical barriers for mainstream adoption
+- Strong community ecosystem around controller profiles
