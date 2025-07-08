@@ -73,4 +73,3 @@ markdown_extensions:
       alternate_style: true
   - toc:
       permalink: true
-broken_yaml: [invalid

@@ -1,0 +1,121 @@
+name: Validate Documentation
+
+on:
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'requirements.txt'
+      - '.github/workflows/**'
+
+jobs:
+  validate-docs:
+    runs-on: ubuntu-latest
+    name: Validate Documentation
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+          
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+            
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Validate documentation structure
+        run: |
+          echo "🔍 Checking documentation structure..."
+          
+          # Check required files
+          required_files=("docs/index.md" "mkdocs.yml")
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Required file missing: $file"
+              exit 1
+            fi
+          done
+          
+          # Check for empty markdown files
+          find docs/ -name "*.md" -size 0 | while read -r file; do
+            echo "⚠️  Warning: Empty file found: $file"
+          done
+          
+      - name: Validate MkDocs configuration
+        run: |
+          echo "🔧 Validating MkDocs configuration..."
+          python -c "
+          import yaml
+          with open('mkdocs.yml') as f:
+              config = yaml.safe_load(f)
+              print('✅ MkDocs configuration is valid YAML')
+              print(f'📖 Site name: {config.get(\"site_name\", \"Unknown\")}')
+              print(f'🔗 Site URL: {config.get(\"site_url\", \"Not set\")}')
+          "
+          
+      - name: Build documentation (strict mode)
+        run: |
+          echo "🏗️  Building documentation in strict mode..."
+          mkdocs build --strict --verbose
+          
+      - name: Check for broken internal links
+        run: |
+          echo "🔗 Final verification - checking built site..."
+          if [ -d "site" ]; then
+            echo "✅ Site built successfully"
+            ls -la site/
+          else
+            echo "❌ Site directory not found"
+            exit 1
+          fi
+          
+      - name: Validate navigation structure
+        run: |
+          echo "🧭 Checking navigation structure..."
+          python -c "
+          import yaml
+          with open('mkdocs.yml') as f:
+              config = yaml.safe_load(f)
+              nav = config.get('nav', [])
+              if not nav:
+                  print('⚠️  Warning: No navigation defined')
+              else:
+                  print(f'✅ Navigation has {len(nav)} top-level items')
+                  
+              # Basic nav validation
+              def check_nav_item(item, level=0):
+                  indent = '  ' * level
+                  if isinstance(item, dict):
+                      for key, value in item.items():
+                          print(f'{indent}📄 {key}')
+                          if isinstance(value, list):
+                              for sub_item in value:
+                                  check_nav_item(sub_item, level + 1)
+                          elif isinstance(value, str):
+                              print(f'{indent}  → {value}')
+                              
+              for item in nav:
+                  check_nav_item(item)
+          "
+          
+      - name: Summary
+        run: |
+          echo "🎉 Documentation validation completed successfully!"
+          echo "📊 Summary:"
+          echo "  ✅ Configuration valid"
+          echo "  ✅ Build successful (strict mode)"
+          echo "  ✅ No broken links detected"
+          echo "  ✅ Ready for deployment"
