@@ -1,4 +1,9 @@
 site_name: Universal Smart Lighting Control - Dimming Docs
+site_url: https://nohat.github.io/dimming/
+repo_url: https://github.com/nohat/dimming
+repo_name: nohat/dimming
+edit_uri: edit/main/docs/
+
 theme:
   name: material
   features:
