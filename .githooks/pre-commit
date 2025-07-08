@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# Pre-commit hook to validate MkDocs documentation
+echo "🔍 Checking MkDocs documentation..."
+
+# Check if we're in the right directory
+if [ ! -f "mkdocs.yml" ]; then
+    echo "❌ mkdocs.yml not found. Are you in the project root?"
+    exit 1
+fi
+
+# Run MkDocs build with strict mode
+if ! mkdocs build --strict --quiet --site-dir /tmp/mkdocs-check; then
+    echo "❌ MkDocs build failed! Please fix documentation errors before committing."
+    echo "💡 Run 'mkdocs build --strict' to see detailed error messages."
+    exit 1
+fi
+
+# Clean up temporary build
+rm -rf /tmp/mkdocs-check
+
+echo "✅ MkDocs documentation is valid!"
+exit 0

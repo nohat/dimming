@@ -1,0 +1,30 @@
+repos:
+  - repo: local
+    hooks:
+      - id: mkdocs-build-check
+        name: MkDocs Build Check
+        entry: mkdocs build --strict --quiet
+        language: system
+        files: ^(docs/.*\.md|mkdocs\.yml)$
+        pass_filenames: false
+        
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-yaml
+        files: ^mkdocs\.yml$
+      - id: check-merge-conflict
+      - id: trailing-whitespace
+        files: ^docs/.*\.md$
+      - id: end-of-file-fixer
+        files: ^docs/.*\.md$
+      - id: check-added-large-files
+        
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.17
+    hooks:
+      - id: mdformat
+        files: ^docs/.*\.md$
+        additional_dependencies:
+          - mdformat-gfm
+          - mdformat-frontmatter
