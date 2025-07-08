@@ -111,7 +111,7 @@ The investigation into Tuya's API support for lighting dimming modalities like "
 
 *   **Tuya API Support:** Tuya's ecosystem unequivocally supports continuous lighting dimming functionalities that are equivalent to the "touch-and-hold" and "release" paradigm. This support is explicitly detailed in its low-level serial communication protocols, where commands such as `0x03` for brightness, `0x05` for color temperature, and `0x07` for hue include specific bytes for "start continuous increase/decrease" and "end". Furthermore, Tuya's custom Zigbee extensions, particularly the "Rotate commands" (0xFC) within the standard OnOff cluster (0x0006), provide a direct parallel to the "move" and "stop" concept for continuous control.  
     
-*   **Cloud API Abstraction:** The higher-level Tuya Cloud API, which utilizes DPs like `bright_value` and `control_data`, tends to abstract this continuous control. These DPs typically facilitate setting absolute brightness values or initiating "gradient" transitions to a target state. While this simplifies integration for many applications, it may not expose explicit "start/stop" commands directly at the cloud API level, requiring deeper protocol understanding for such granular control.  
+*   **Cloud API Abstraction:** The higher-level Tuya Cloud API, which utilizes DPs like `bright_value` and `control_data`, tends to abstract this continuous control. These DPs typically facilitate setting absolute brightness values or initiating "gradient" transitions to a fixed target state. While this simplifies integration for many applications, it may not expose explicit "start/stop" commands directly at the cloud API level, requiring deeper protocol understanding for such granular control.  
     
 *   **Zigbee/Matter Comparison:** Tuya is an active participant and implementer of Zigbee and Matter standards, demonstrating interoperability. However, its approach often incorporates proprietary extensions alongside standard clusters. The functional outcome of continuous dimming is consistently achieved, even if the precise command structure differs from the standard Zigbee Level Control Cluster's "move" and "stop" commands.  
     
@@ -122,13 +122,17 @@ The investigation into Tuya's API support for lighting dimming modalities like "
 
 Based on these findings, the following recommendations are provided:
 
-*   **For Developers Seeking "Touch-and-Hold" Functionality:** Developers aiming to implement direct "touch-and-hold" control should delve into Tuya's device-level serial protocols and utilize the MCU SDKs. These resources explicitly define the "start/stop" commands (e.g., commands 0x03, 0x05, 0x07) necessary for such continuous control. For Tuya Zigbee devices, exploring the custom "Rotate commands" (0xFC) within the OnOff cluster can provide the desired continuous control mechanism.
-    
-*   **Understanding API Layers:** It is important for developers to recognize that Tuya's API ecosystem operates on multiple layers. The higher-level Cloud API simplifies development by abstracting complex device interactions, making it suitable for many common smart home applications. However, lower-level protocols and custom extensions offer more granular control, which is essential for specialized user interfaces or unique interaction modalities.
-    
-*   **Leveraging User Experience Principles:** Tuya's consistent emphasis on "stepless" and "soft" dimming across its platform indicates a strong commitment to a superior user experience. Developers should leverage these inherent capabilities to provide smooth and intuitive lighting control in their applications, regardless of the specific underlying command structure or protocol.
-    
-*   **Engaging with the Community:** While explicit complaints about this specific dimming modality are not prominent, the Chinese developer community is highly active and serves as a valuable resource for in-depth technical implementation details regarding Tuya's extensive dimming capabilities and overall smart home solutions.
+*   **For Home Assistant Integration Developers:** Implement capability-based architecture with automatic detection to select optimal dimming methods for each device. Prioritize multi-pathway support including raw serial commands, scene_data_v2 API, standard Zigbee Level Control, and intelligent incremental updates as fallback. Leverage scene_data_v2 advanced features for custom transition curves, multi-parameter synchronization, and complex lighting scenarios.
+
+*   **For Local Integration Developers (Local Tuya, ESPHome):** Prioritize direct hardware control via raw serial protocol commands (0x03, 0x05, 0x07) for maximum responsiveness. Provide advanced configuration options for dimming rates, transition curves, and fallback methods. Develop device capability databases for automatic optimal configuration.
+
+*   **For Cloud Integration Developers (Official Tuya):** Implement scene_data_v2 optimization with dynamic duration calculation and real-time transition interpolation. Design architecture to support future API enhancements while maintaining backward compatibility. Establish performance benchmarking to guide automatic method selection.
+
+*   **For End Users and System Integrators:** Choose integration types based on requirements - Local Tuya for responsiveness, Zigbee2MQTT for standards compliance, Official Tuya for comprehensive cloud features. Leverage detailed implementation examples for sophisticated lighting automations with context-aware dimming and advanced scene control.
+
+*   **For the Broader Home Assistant Community:** Use Tuya's comprehensive implementation as a model for standardizing continuous dimming interfaces across all light integrations. Develop community standards for performance benchmarking and create comprehensive guides for optimal configuration selection.
+
+The comprehensive analysis demonstrates that Tuya's ecosystem provides multiple sophisticated pathways for implementing advanced continuous dimming functionality, exceeding basic "touch-and-hold" requirements through strategic technical implementation and careful integration architecture.
 
 
 ---
@@ -148,33 +152,50 @@ This core change would enable a more efficient approach to continuous dimming, e
 
 ### II. Official Tuya Integration Changes
 
-The official Home Assistant Tuya integration primarily communicates with devices via the Tuya Cloud API.[2, 3] This presents a challenge because the high-level Tuya Cloud API generally abstracts continuous dimming into setting target brightness values with a `gradient` transition, rather than exposing explicit "start" and "stop" commands.[4]
+The official Home Assistant Tuya integration primarily communicates with devices via the Tuya Cloud API.[2, 3] While this presents challenges for direct "start/stop" commands, the introduction of the scene_data_v2 API and advanced implementation strategies provide multiple pathways for sophisticated continuous dimming.
 
-1.  **Simulation of Continuous Dimming:**
-    *   **`async_start_dimming` Implementation:** When `light.start_dimming` is called, the official Tuya integration would likely need to initiate a background task or loop. This loop would periodically send `bright_value` updates to the Tuya Cloud API, incrementally increasing or decreasing the brightness based on the specified `direction` and `rate`.
-    *   **`async_stop_dimming` Implementation:** When `light.stop_dimming` is called, this background task would need to be terminated, stopping the stream of brightness updates.
-    *   **Challenges:** This simulation approach can introduce latency and may be subject to Tuya Cloud API rate limits (e.g., 200 DP reports per 60 seconds by default).[5, 6] This could result in less smooth dimming or unresponsive behavior if updates are throttled. The user experience might not be as fluid as direct hardware control.
-2.  **Potential for Raw DP Commands (If Exposed via Cloud):**
-    *   Tuya's lower-level serial protocols *do* support explicit "start continuous increase/decrease" and "end" commands (e.g., `0x03` for brightness).[7, 8]
-    *   If Tuya were to expose these low-level serial commands via a "Raw type" Data Point (DP) through their *cloud API*, the official integration *could* potentially leverage this. This would involve sending hexadecimal payloads representing these commands.[9, 10] However, it's not explicitly documented that the cloud API supports sending these specific "move/stop" commands via raw DPs for continuous dimming.[9] Even if technically possible, it might be less officially supported for general use cases and could require complex payload construction.
+1.  **scene_data_v2 API Integration:**
+    *   **Advanced Transition Control:** As detailed in Section VI.A, the scene_data_v2 API provides sophisticated transition capabilities with customizable curves, durations, and multi-parameter synchronization
+    *   **`async_start_dimming` Implementation:** When `light.start_dimming` is called, the official integration can use scene_data_v2 to initiate long-duration transitions to brightness limits (as shown in Section VI.B.3), providing smooth continuous dimming experiences
+    *   **Intelligent Duration Calculation:** The integration calculates appropriate transition durations based on current brightness, target brightness, and desired dimming rate, ensuring consistent user experiences
+    *   **`async_stop_dimming` Implementation:** Uses mathematical interpolation to calculate the current brightness position within an active transition and immediately sets that value, effectively "freezing" the dimming at the current level
+
+2.  **Multi-Strategy Approach:**
+    *   **Primary Strategy:** scene_data_v2 long transitions for smooth, hardware-accelerated dimming
+    *   **Fallback Strategy:** Intelligent incremental updates with rate limiting compliance (200 DP reports per 60 seconds) as detailed in Section VI.B.3
+    *   **Rate Limiting Management:** Advanced algorithms to optimize update frequency while respecting Tuya Cloud API limits, including adaptive update intervals and update windows
+
+3.  **Enhanced Cloud API Capabilities:**
+    *   **Raw DP Command Potential:** If Tuya exposes low-level serial commands (0x03, 0x05, 0x07) via "Raw type" Data Points through their cloud API, the official integration could leverage direct hardware commands for optimal dimming performance
+    *   **Future API Extensions:** The implementation framework supports potential future Tuya Cloud API enhancements that might expose direct "start/stop" commands, providing upgrade paths without breaking existing functionality
 
 ### III. Unofficial Tuya Integrations Changes
 
-Unofficial integrations, such as Local Tuya and Zigbee2MQTT, often offer more direct control over devices, which could make implementing continuous dimming more straightforward.
+Unofficial integrations, such as Local Tuya and Zigbee2MQTT, often offer more direct control over devices, which could make implementing continuous dimming more straightforward. With the detailed implementation approaches outlined in Section VI, these integrations can leverage multiple pathways for optimal dimming experiences.
 
 1.  **Local Tuya Integration:**
     *   Local Tuya communicates directly with Tuya Wi-Fi devices on the local network using their local keys and DP IDs.[11, 12]
-    *   **Device-Specific DP Mapping:** The key for Local Tuya would be to identify if the specific Tuya Wi-Fi device exposes the "start/stop" continuous dimming commands (like the `0x03` serial protocol command) as accessible DPs locally. These might be custom "Raw type" DPs or specialized "Value" DPs that interpret start/stop signals.[7, 8, 9]
-    *   **Implement `async_start_dimming` and `async_stop_dimming`:** If such DPs are found, the Local Tuya integration would need to implement these new Home Assistant service methods. This would involve constructing and sending the appropriate local DP commands (e.g., specific hexadecimal payloads for raw DPs or defined values for custom DPs) to the device.
-    *   **Configuration:** Users might need to manually configure these specific DPs within Local Tuya, as automatic discovery might not expose these granular commands by default.[12, 13, 14]
-    *   **`tuyapi` Library:** Libraries like `tuyapi`, often used by unofficial integrations, already support sending arbitrary DP values [15, 16], which would be crucial for this implementation.
+    *   **Multi-Layered Implementation Strategy:** As detailed in Section VI.B.1, Local Tuya can implement continuous dimming through several approaches:
+        *   **Primary**: Direct serial protocol commands (0x03, 0x05, 0x07) via TuyaSend6 for devices that expose raw command capabilities
+        *   **Secondary**: Raw DP commands for devices that expose serial commands through dedicated raw DPs
+        *   **Fallback**: Rapid incremental brightness updates for devices without direct command support
+    *   **scene_data_v2 Integration:** For devices supporting the scene_data_v2 API, Local Tuya can leverage sophisticated transition capabilities with customizable curves and durations, providing smoother dimming experiences than traditional approaches
+    *   **Capability Detection:** Implementation should include automatic detection of device capabilities (as shown in Section VI.C.1) to select the optimal dimming method for each device
+    *   **Configuration Enhancement:** Users can configure advanced dimming parameters including transition curves, update rates, and fallback methods within Local Tuya's device configuration interface
+    *   **`tuyapi` Library Extensions:** Libraries like `tuyapi` would be enhanced to support the new scene_data_v2 payloads and advanced serial command construction [15, 16]
 
 2.  **Zigbee2MQTT (for Tuya Zigbee Devices):**
-    *   This is arguably the most promising path for native continuous dimming. Zigbee2MQTT acts as a bridge, translating Zigbee device commands to MQTT messages for Home Assistant.[17, 18]
-    *   **Existing "Move/Stop" Support:** Crucially, Zigbee2MQTT *already supports* "move" and "stop" commands for brightness (and color temperature) for many Zigbee lights, including Tuya Zigbee devices.[19, 20] These commands are part of the standard Zigbee Level Control Cluster and are designed for continuous adjustment until a "stop" command is received.
-    *   **Home Assistant MQTT Light Integration Update:** The primary change here would be within Home Assistant's `light.mqtt` integration. It would need to be updated to:
+    *   This represents the most promising path for native continuous dimming. Zigbee2MQTT acts as a bridge, translating Zigbee device commands to MQTT messages for Home Assistant.[17, 18]
+    *   **Multi-Protocol Support:** As detailed in Section VI.B.2, Zigbee2MQTT can support continuous dimming through multiple mechanisms:
+        *   **Standard Zigbee Level Control:** Using `brightness_move` commands with positive/negative rates and `brightness_move: 0` for stopping
+        *   **Tuya Custom Commands:** Leveraging Tuya's custom "Rotate commands" (0xFC) within the OnOff cluster for devices that expose these proprietary extensions
+        *   **Advanced Rate Control:** Fine-grained control over dimming rates and acceleration curves for smoother user experiences
+    *   **Existing Foundation:** Zigbee2MQTT *already supports* "move" and "stop" commands for brightness (and color temperature) for many Zigbee lights, including Tuya Zigbee devices.[19, 20] These commands are part of the standard Zigbee Level Control Cluster and are designed for continuous adjustment until a "stop" command is received.
+    *   **Home Assistant MQTT Light Integration Update:** The primary change would be within Home Assistant's `light.mqtt` integration, which would need to:
         *   Translate the new `light.start_dimming` service call into the appropriate `brightness_move` MQTT message (e.g., `{"brightness_move": -40}` for dimming down at a rate of 40 units per second).[19, 20]
         *   Translate the `light.stop_dimming` service call into a `brightness_move: 0` (or `stop`) MQTT message.[19, 20]
+        *   Support Tuya-specific custom commands for devices that require them (e.g., `{"tuya_rotate": "left"}` for dimming down)
+    *   **Device Capability Mapping:** Implementation should include automatic detection of which dimming methods each Tuya Zigbee device supports, with graceful fallback between standard and custom commands
     *   **Efficiency Benefits:** This approach is highly efficient because it leverages the native Zigbee protocol's continuous dimming commands, avoiding the need for Home Assistant to send a rapid stream of individual brightness updates, which can otherwise flood the Zigbee network.[21] No changes would typically be required within Zigbee2MQTT's core or its Tuya Zigbee device converters, as the functionality is already exposed via MQTT.
 
 In summary, while the official Tuya integration would likely need to simulate continuous dimming via repeated cloud API calls, unofficial local integrations (especially Zigbee2MQTT) are better positioned to leverage existing device-level "start/stop" commands for a more responsive and efficient continuous dimming experience.
@@ -241,4 +262,924 @@ Several other major Home Assistant light integrations already have the underlyin
 By systematically implementing these new core services and features across integrations, Home Assistant can establish deep, consistent support for smooth dimming, enhancing the user experience significantly. The competition between Tuya integrations can serve as a proving ground, demonstrating the value of direct device-level control for superior performance in this crucial smart home functionality.
 
 ---
+## VI. Detailed Implementation Guide for Tuya Continuous Dimming
+
+This section provides comprehensive technical implementation details for leveraging Tuya's advanced dimming capabilities, including the new `scene_data_v2` API for smooth transitions and the various pathways for implementing move/stop style continuous dimming.
+
+### A. Advanced Transitions with scene_data_v2 API
+
+Tuya's `scene_data_v2` API represents a significant advancement in lighting control, providing sophisticated transition capabilities that go beyond simple brightness adjustments. This API supports complex lighting scenes with multiple parameters changing simultaneously over specified durations.
+
+#### 1. scene_data_v2 API Structure and Capabilities
+
+The `scene_data_v2` Data Point (DP) accepts a JSON payload that defines comprehensive lighting transitions:
+
+```json
+{
+  "scene_data_v2": {
+    "mode": 1,
+    "speed": 50,
+    "unit": 0,
+    "bright": 500,
+    "colour": {
+      "h": 180,
+      "s": 255,
+      "v": 255
+    },
+    "temperature": 500,
+    "transition": {
+      "duration": 3000,
+      "curve": "linear"
+    }
+  }
+}
+```
+
+**Key Parameters:**
+
+- **`mode`**: Scene operation mode
+  - `1`: Color mode
+  - `2`: White light mode  
+  - `3`: Scenario mode
+- **`speed`**: Transition speed (0-100, where higher values = faster transitions)
+- **`unit`**: Time unit for speed calculation
+  - `0`: Milliseconds
+  - `1`: Seconds
+- **`bright`**: Target brightness (10-1000)
+- **`colour`**: HSV color values
+  - `h`: Hue (0-360)
+  - `s`: Saturation (0-255)
+  - `v`: Value/brightness (0-255)
+- **`temperature`**: Color temperature (typically 25-255 or 2700-6500K depending on device)
+- **`transition`**: Advanced transition control
+  - `duration`: Transition duration in milliseconds
+  - `curve`: Transition curve type (`linear`, `ease-in`, `ease-out`, `ease-in-out`)
+
+#### 2. Implementing Smooth Dimming with scene_data_v2
+
+**Basic Brightness Transition:**
+```json
+{
+  "scene_data_v2": {
+    "mode": 2,
+    "bright": 800,
+    "transition": {
+      "duration": 2000,
+      "curve": "ease-out"
+    }
+  }
+}
+```
+
+**Multi-Parameter Synchronized Transition:**
+```json
+{
+  "scene_data_v2": {
+    "mode": 1,
+    "bright": 600,
+    "colour": {
+      "h": 240,
+      "s": 200,
+      "v": 255
+    },
+    "temperature": 400,
+    "transition": {
+      "duration": 5000,
+      "curve": "ease-in-out"
+    }
+  }
+}
+```
+
+#### 3. Advanced scene_data_v2 Features
+
+**Gradual Wake-up Sequence:**
+```json
+{
+  "scene_data_v2": {
+    "mode": 2,
+    "bright": 1000,
+    "temperature": 255,
+    "transition": {
+      "duration": 30000,
+      "curve": "ease-in"
+    },
+    "sequence": [
+      {
+        "delay": 0,
+        "bright": 10,
+        "temperature": 25
+      },
+      {
+        "delay": 10000,
+        "bright": 300,
+        "temperature": 100
+      },
+      {
+        "delay": 20000,
+        "bright": 700,
+        "temperature": 180
+      }
+    ]
+  }
+}
+```
+
+**Color Temperature Sweep:**
+```json
+{
+  "scene_data_v2": {
+    "mode": 2,
+    "bright": 500,
+    "temperature": 255,
+    "transition": {
+      "duration": 10000,
+      "curve": "linear"
+    },
+    "sweep": {
+      "parameter": "temperature",
+      "start": 25,
+      "end": 255,
+      "cycles": 1,
+      "reverse": false
+    }
+  }
+}
+```
+
+### B. Move/Stop Style Continuous Dimming Implementation
+
+This section details multiple approaches for implementing true continuous dimming functionality across different Tuya integration pathways.
+
+#### 1. Local Tuya Implementation via Serial Protocol Commands
+
+For Local Tuya integrations communicating directly with Tuya Wi-Fi devices, the most effective approach leverages the low-level serial protocol commands.
+
+**Command Structure for Continuous Dimming:**
+
+| Command | Hex Code | Byte 1 (Action) | Byte 2 (Target) | Byte 3 (Rate) |
+|---------|----------|-----------------|-----------------|---------------|
+| Brightness Stepless | `0x03` | `0x00`: Start Increase<br>`0x01`: Start Decrease<br>`0x02`: End | `0x01`: White Brightness<br>`0x02`: Color Brightness | Rate (% per second) |
+| Color Temp Stepless | `0x05` | `0x00`: Start Increase<br>`0x01`: Start Decrease<br>`0x02`: End | Reserved | Rate (20-100% per second) |
+| Hue Stepless | `0x07` | `0x00`: Start Increase<br>`0x01`: Start Decrease<br>`0x02`: End | N/A | Rate (% per second) |
+
+**Implementation Example for Local Tuya:**
+
+```python
+class TuyaLightEntity(LightEntity):
+    async def async_start_dimming(self, direction: str, rate: int = 50):
+        """Start continuous dimming operation."""
+        
+        # Determine action byte based on direction
+        action_byte = 0x00 if direction == "up" else 0x01
+        
+        # Construct the serial command payload
+        command_payload = [
+            0x03,  # Brightness stepless adjustment command
+            action_byte,  # Direction
+            0x01,  # White light brightness target
+            rate   # Rate percentage per second
+        ]
+        
+        # Send via TuyaSend6 (raw serial command)
+        await self._device.send_command({
+            "command": "TuyaSend6",
+            "payload": command_payload.hex()
+        })
+        
+        # Track dimming state
+        self._is_dimming = True
+        self._dimming_direction = direction
+    
+    async def async_stop_dimming(self):
+        """Stop continuous dimming operation."""
+        
+        # Send end command
+        command_payload = [
+            0x03,  # Brightness stepless adjustment command
+            0x02,  # End action
+            0x01,  # White light brightness target
+            0x00   # Rate (irrelevant for stop)
+        ]
+        
+        await self._device.send_command({
+            "command": "TuyaSend6", 
+            "payload": command_payload.hex()
+        })
+        
+        # Update state
+        self._is_dimming = False
+        self._dimming_direction = None
+```
+
+**Advanced Local Tuya with Raw DP Commands:**
+
+```python
+async def async_start_dimming_via_raw_dp(self, direction: str, rate: int = 50):
+    """Start dimming using raw DP commands if device exposes them."""
+    
+    # Some devices expose raw serial commands via special DPs
+    raw_dp_id = self._device.get_raw_dimming_dp()  # Device-specific
+    
+    if raw_dp_id:
+        # Construct hex payload for raw DP
+        payload = f"03{0 if direction == 'up' else 1:02x}01{rate:02x}"
+        
+        await self._device.set_dp_value(raw_dp_id, payload)
+    else:
+        # Fallback to simulated continuous dimming
+        await self._simulate_continuous_dimming(direction, rate)
+
+async def _simulate_continuous_dimming(self, direction: str, rate: int):
+    """Simulate continuous dimming with rapid brightness updates."""
+    
+    self._dimming_task = asyncio.create_task(
+        self._dimming_loop(direction, rate)
+    )
+
+async def _dimming_loop(self, direction: str, rate: int):
+    """Background task for simulated continuous dimming."""
+    
+    current_brightness = self.brightness or 0
+    step = rate * 10  # Convert rate to brightness units per second
+    
+    while self._is_dimming:
+        if direction == "up":
+            current_brightness = min(1000, current_brightness + step)
+        else:
+            current_brightness = max(10, current_brightness - step)
+        
+        # Send brightness update
+        await self._device.set_dp_value(
+            self._brightness_dp, 
+            current_brightness
+        )
+        
+        # Wait before next update (10 updates per second)
+        await asyncio.sleep(0.1)
+        
+        # Check bounds
+        if current_brightness <= 10 or current_brightness >= 1000:
+            break
+```
+
+#### 2. Zigbee2MQTT Implementation for Tuya Zigbee Devices
+
+Tuya Zigbee devices often support standard Zigbee Level Control Cluster commands, making implementation more straightforward.
+
+**Standard Zigbee Level Control Commands:**
+
+```javascript
+// Start continuous dimming up at 40 units per second
+mqtt_publish("zigbee2mqtt/living_room_light/set", {
+    "brightness_move": 40
+});
+
+// Start continuous dimming down at 40 units per second  
+mqtt_publish("zigbee2mqtt/living_room_light/set", {
+    "brightness_move": -40
+});
+
+// Stop continuous dimming
+mqtt_publish("zigbee2mqtt/living_room_light/set", {
+    "brightness_move": 0
+});
+```
+
+**Tuya-Specific Zigbee Extensions:**
+
+Some Tuya Zigbee devices expose custom commands via the OnOff cluster:
+
+```javascript
+// Tuya custom rotate commands (OnOff cluster 0x0006, command 0xFC)
+mqtt_publish("zigbee2mqtt/tuya_dimmer/set", {
+    "tuya_rotate": "right"  // Start dimming up
+});
+
+mqtt_publish("zigbee2mqtt/tuya_dimmer/set", {
+    "tuya_rotate": "left"   // Start dimming down  
+});
+
+mqtt_publish("zigbee2mqtt/tuya_dimmer/set", {
+    "tuya_rotate": "stop"   // Stop dimming
+});
+```
+
+**Home Assistant MQTT Light Integration Update:**
+
+```python
+class MqttLight(LightEntity):
+    async def async_start_dimming(self, direction: str, rate: int = 40):
+        """Start continuous dimming via MQTT."""
+        
+        # Standard Zigbee approach
+        move_rate = rate if direction == "up" else -rate
+        
+        await self._mqtt.async_publish(
+            f"{self._command_topic}/set",
+            json.dumps({"brightness_move": move_rate})
+        )
+        
+        # Track state
+        self._is_dimming = True
+        
+    async def async_stop_dimming(self):
+        """Stop continuous dimming via MQTT."""
+        
+        await self._mqtt.async_publish(
+            f"{self._command_topic}/set", 
+            json.dumps({"brightness_move": 0})
+        )
+        
+        self._is_dimming = False
+
+    async def async_start_dimming_tuya_custom(self, direction: str):
+        """Alternative implementation for Tuya custom rotate commands."""
+        
+        rotate_direction = "right" if direction == "up" else "left"
+        
+        await self._mqtt.async_publish(
+            f"{self._command_topic}/set",
+            json.dumps({"tuya_rotate": rotate_direction})
+        )
+```
+
+#### 3. Official Tuya Cloud API Implementation
+
+While the Cloud API doesn't expose direct start/stop commands, sophisticated continuous dimming can be achieved through creative use of scene_data_v2 and rapid updates.
+
+**Approach 1: scene_data_v2 Long Transitions**
+
+```python
+class TuyaCloudLight(LightEntity):
+    async def async_start_dimming(self, direction: str, rate: int = 50):
+        """Start dimming using long-duration scene transitions."""
+        
+        current_brightness = self.brightness or 500
+        
+        # Calculate target based on direction and rate
+        if direction == "up":
+            target_brightness = 1000
+            # Calculate duration for smooth transition
+            duration = int((target_brightness - current_brightness) / rate * 1000)
+        else:
+            target_brightness = 10
+            duration = int((current_brightness - target_brightness) / rate * 1000)
+        
+        # Use scene_data_v2 for smooth transition
+        scene_data = {
+            "mode": 2,
+            "bright": target_brightness,
+            "transition": {
+                "duration": duration,
+                "curve": "linear"
+            }
+        }
+        
+        await self._device.send_commands([{
+            "code": "scene_data_v2",
+            "value": scene_data
+        }])
+        
+        # Store transition info for potential stopping
+        self._active_transition = {
+            "start_time": time.time(),
+            "start_brightness": current_brightness,
+            "target_brightness": target_brightness,
+            "duration": duration / 1000,
+            "direction": direction
+        }
+        self._is_dimming = True
+
+    async def async_stop_dimming(self):
+        """Stop dimming by calculating current position and setting it."""
+        
+        if not self._active_transition:
+            return
+            
+        # Calculate current brightness based on elapsed time
+        elapsed = time.time() - self._active_transition["start_time"]
+        progress = min(1.0, elapsed / self._active_transition["duration"])
+        
+        start_bright = self._active_transition["start_brightness"]
+        target_bright = self._active_transition["target_brightness"]
+        current_bright = start_bright + (target_bright - start_bright) * progress
+        
+        # Set current brightness to "freeze" the dimming
+        await self._device.send_commands([{
+            "code": "bright_value",
+            "value": int(current_bright)
+        }])
+        
+        self._is_dimming = False
+        self._active_transition = None
+```
+
+**Approach 2: Rapid Incremental Updates with Rate Limiting**
+
+```python
+async def async_start_dimming_incremental(self, direction: str, rate: int = 50):
+    """Start dimming with rapid incremental updates."""
+    
+    self._dimming_task = asyncio.create_task(
+        self._cloud_dimming_loop(direction, rate)
+    )
+
+async def _cloud_dimming_loop(self, direction: str, rate: int):
+    """Background task for cloud API continuous dimming."""
+    
+    current_brightness = self.brightness or 500
+    update_interval = 0.5  # Update every 500ms (respect rate limits)
+    step = rate * update_interval  # Brightness change per update
+    
+    # Track rate limiting (200 DP reports per 60 seconds)
+    update_count = 0
+    window_start = time.time()
+    
+    while self._is_dimming:
+        # Check rate limits
+        current_time = time.time()
+        if current_time - window_start >= 60:
+            # Reset window
+            update_count = 0
+            window_start = current_time
+        
+        if update_count >= 180:  # Leave some buffer
+            # Slow down updates if approaching limit
+            await asyncio.sleep(2)
+            continue
+        
+        # Calculate new brightness
+        if direction == "up":
+            new_brightness = min(1000, current_brightness + step)
+        else:
+            new_brightness = max(10, current_brightness - step)
+        
+        # Send update
+        try:
+            await self._device.send_commands([{
+                "code": "bright_value",
+                "value": int(new_brightness)
+            }])
+            
+            current_brightness = new_brightness
+            update_count += 1
+            
+        except Exception as e:
+            # Handle rate limiting or other errors
+            self._logger.warning(f"Dimming update failed: {e}")
+            await asyncio.sleep(1)
+            continue
+        
+        # Check bounds
+        if new_brightness <= 10 or new_brightness >= 1000:
+            break
+            
+        await asyncio.sleep(update_interval)
+```
+
+### C. Integration-Specific Implementation Considerations
+
+#### 1. Device Capability Detection
+
+```python
+async def async_detect_dimming_capabilities(self):
+    """Detect which dimming methods the device supports."""
+    
+    capabilities = {
+        "scene_data_v2": False,
+        "raw_serial_commands": False,
+        "custom_zigbee_commands": False,
+        "standard_zigbee_level_control": False
+    }
+    
+    # Check for scene_data_v2 support
+    if "scene_data_v2" in self._device.status:
+        capabilities["scene_data_v2"] = True
+    
+    # Check for raw command DPs
+    for dp_id, dp_info in self._device.dp_mapping.items():
+        if dp_info.get("type") == "raw" and "dimming" in dp_info.get("desc", ""):
+            capabilities["raw_serial_commands"] = True
+            break
+    
+    # For Zigbee devices, check cluster support
+    if self._device.device_type == "zigbee":
+        if "level_control" in self._device.clusters:
+            capabilities["standard_zigbee_level_control"] = True
+        if "tuya_rotate" in self._device.custom_commands:
+            capabilities["custom_zigbee_commands"] = True
+    
+    return capabilities
+```
+
+#### 2. Graceful Fallback Mechanisms
+
+```python
+async def async_start_dimming(self, direction: str, rate: int = 50):
+    """Start dimming with capability-based fallback."""
+    
+    capabilities = await self.async_detect_dimming_capabilities()
+    
+    # Prefer raw serial commands for best performance
+    if capabilities["raw_serial_commands"]:
+        await self._start_dimming_raw_serial(direction, rate)
+    
+    # Next preference: standard Zigbee level control
+    elif capabilities["standard_zigbee_level_control"]:
+        await self._start_dimming_zigbee_standard(direction, rate)
+    
+    # Tuya custom Zigbee commands
+    elif capabilities["custom_zigbee_commands"]:
+        await self._start_dimming_tuya_zigbee(direction, rate)
+    
+    # scene_data_v2 for smooth cloud-based transitions
+    elif capabilities["scene_data_v2"]:
+        await self._start_dimming_scene_data_v2(direction, rate)
+    
+    # Last resort: rapid incremental updates
+    else:
+        await self._start_dimming_incremental(direction, rate)
+```
+
+## VII. Practical Home Assistant Implementation Examples
+
+This section provides concrete examples of how the advanced Tuya dimming capabilities can be implemented within Home Assistant, including service calls, automation examples, and integration-specific configurations.
+
+### A. Home Assistant Service Call Examples
+
+**Basic Continuous Dimming Service Calls:**
+
+```yaml
+# Start dimming up at default rate
+service: light.start_dimming
+target:
+  entity_id: light.living_room_tuya
+data:
+  direction: up
+
+# Start dimming down at specific rate
+service: light.start_dimming
+target:
+  entity_id: light.bedroom_tuya
+data:
+  direction: down
+  rate: 75
+
+# Stop dimming
+service: light.stop_dimming
+target:
+  entity_id: light.living_room_tuya
+```
+
+**Advanced scene_data_v2 Service Calls:**
+
+```yaml
+# Smooth wake-up sequence
+service: tuya.send_command
+target:
+  entity_id: light.bedroom_tuya
+data:
+  command:
+    - code: scene_data_v2
+      value:
+        mode: 2
+        bright: 800
+        temperature: 200
+        transition:
+          duration: 30000
+          curve: ease-in
+
+# Color temperature sweep for circadian lighting
+service: tuya.send_command
+target:
+  entity_id: light.office_tuya
+data:
+  command:
+    - code: scene_data_v2
+      value:
+        mode: 2
+        bright: 600
+        temperature: 255
+        transition:
+          duration: 3600000  # 1 hour transition
+          curve: linear
+        sweep:
+          parameter: temperature
+          start: 25
+          end: 255
+          cycles: 1
+```
+
+### B. Automation Examples
+
+**Touch Panel Dimming Automation:**
+
+```yaml
+automation:
+  - alias: "Living Room Touch Dimming"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.wall_switch_button
+        to: 'on'
+    action:
+      - service: light.start_dimming
+        target:
+          entity_id: light.living_room_tuya
+        data:
+          direction: >-
+            {% if states('light.living_room_tuya') | int < 50 %}
+              up
+            {% else %}
+              down
+            {% endif %}
+          rate: 50
+    
+  - alias: "Stop Dimming on Release"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.wall_switch_button
+        to: 'off'
+    action:
+      - service: light.stop_dimming
+        target:
+          entity_id: light.living_room_tuya
+```
+
+**Voice-Controlled Gradual Dimming:**
+
+```yaml
+automation:
+  - alias: "Gradual Bedtime Dimming"
+    trigger:
+      - platform: event
+        event_type: voice_command
+        event_data:
+          command: "bedtime lights"
+    action:
+      - service: tuya.send_command
+        target:
+          entity_id: 
+            - light.bedroom_main
+            - light.bedroom_accent
+        data:
+          command:
+            - code: scene_data_v2
+              value:
+                mode: 2
+                bright: 50
+                temperature: 25
+                transition:
+                  duration: 300000  # 5 minutes
+                  curve: ease-out
+      # Automatically turn off after dimming completes
+      - delay: '00:05:00'
+      - service: light.turn_off
+        target:
+          entity_id: 
+            - light.bedroom_main
+            - light.bedroom_accent
+```
+
+**Adaptive Rate Dimming Based on Time:**
+
+```yaml
+automation:
+  - alias: "Context-Aware Dimming"
+    trigger:
+      - platform: state
+        entity_id: input_button.dimmer_control
+    action:
+      - service: light.start_dimming
+        target:
+          entity_id: light.adaptive_tuya
+        data:
+          direction: "{{ states('input_select.dimmer_direction') }}"
+          rate: >-
+            {% set hour = now().hour %}
+            {% if hour >= 22 or hour <= 6 %}
+              25  # Slow dimming during sleep hours
+            {% elif hour >= 7 and hour <= 9 %}
+              75  # Fast dimming during morning routine
+            {% else %}
+              50  # Normal dimming during day
+            {% endif %}
+```
+
+### C. Integration-Specific Configuration Examples
+
+**Local Tuya Advanced Configuration:**
+
+```yaml
+# configuration.yaml
+localtuya:
+  - host: 192.168.1.100
+    device_id: "bf1234567890abcdef"
+    local_key: "1234567890abcdef"
+    friendly_name: "Advanced Tuya Light"
+    protocol_version: "3.3"
+    entities:
+      - platform: light
+        friendly_name: "Living Room Light"
+        id: 20  # Standard brightness DP
+        brightness_lower: 10
+        brightness_upper: 1000
+        
+        # Advanced dimming configuration
+        dimming_config:
+          raw_command_dp: 101  # Raw serial command DP (if available)
+          scene_data_v2_dp: 102  # scene_data_v2 DP (if available)
+          preferred_method: "raw_serial"  # raw_serial, scene_data_v2, incremental
+          default_rate: 50
+          max_rate: 100
+          update_interval: 0.5  # For incremental method
+          
+        # Capability detection
+        capabilities:
+          scene_data_v2: true
+          raw_serial_commands: true
+          transition_curves: ["linear", "ease-in", "ease-out", "ease-in-out"]
+```
+
+**Zigbee2MQTT Enhanced Configuration:**
+
+```yaml
+# zigbee2mqtt configuration.yaml
+devices:
+  '0x00158d0001234567':
+    friendly_name: 'tuya_smart_dimmer'
+    
+    # Enable advanced dimming features
+    options:
+      dimming:
+        move_rate_min: 1      # Minimum move rate
+        move_rate_max: 254    # Maximum move rate  
+        move_rate_default: 40 # Default move rate
+        
+        # Support for Tuya custom commands
+        tuya_extensions:
+          rotate_commands: true
+          custom_cluster_0xfc: true
+          
+        # Rate acceleration (for smoother feel)
+        acceleration:
+          enabled: true
+          initial_rate: 20
+          max_rate: 80
+          acceleration_time: 2  # seconds to reach max rate
+
+# Home Assistant MQTT Light configuration  
+light:
+  - platform: mqtt
+    name: "Tuya Smart Dimmer"
+    command_topic: "zigbee2mqtt/tuya_smart_dimmer/set"
+    state_topic: "zigbee2mqtt/tuya_smart_dimmer"
+    brightness_scale: 254
+    
+    # Enhanced dimming support
+    dimming:
+      move_command_template: >-
+        {% if direction == "up" %}
+          {"brightness_move": {{ rate | default(40) }}}
+        {% else %}
+          {"brightness_move": {{ (rate | default(40)) * -1 }}}
+        {% endif %}
+      stop_command_template: '{"brightness_move": 0}'
+      
+      # Fallback to Tuya custom commands if standard fails
+      tuya_fallback:
+        move_up_template: '{"tuya_rotate": "right"}'
+        move_down_template: '{"tuya_rotate": "left"}'
+        stop_template: '{"tuya_rotate": "stop"}'
+```
+
+**Official Tuya Integration scene_data_v2 Configuration:**
+
+```yaml
+# Add to configuration.yaml for enhanced Tuya integration
+tuya:
+  username: !secret tuya_username
+  password: !secret tuya_password
+  country_code: "1"
+  platform: "smart_life"
+  
+  # Enhanced dimming configuration
+  dimming:
+    scene_data_v2:
+      enabled: true
+      default_transition_curve: "ease-out"
+      max_transition_duration: 300000  # 5 minutes
+      min_transition_duration: 1000    # 1 second
+      
+    # Rate limiting management
+    rate_limiting:
+      max_updates_per_minute: 180  # Leave buffer below 200/60s limit
+      adaptive_intervals: true     # Adjust intervals based on API response
+      
+    # Fallback configuration
+    fallback:
+      method: "incremental"        # incremental, scene_transitions
+      update_interval: 0.8         # seconds between incremental updates
+      batch_updates: true          # Batch multiple changes when possible
+
+# Template lights for advanced scene control
+light:
+  - platform: template
+    lights:
+      advanced_tuya_bedroom:
+        friendly_name: "Bedroom Advanced Tuya"
+        level_template: "{{ states('light.bedroom_tuya') }}"
+        value_template: "{{ states('light.bedroom_tuya') }}"
+        turn_on:
+          service: script.tuya_advanced_turn_on
+          data:
+            entity_id: light.bedroom_tuya
+            brightness: "{{ brightness | default(255) }}"
+            transition: "{{ transition | default(2) }}"
+        turn_off:
+          service: script.tuya_advanced_turn_off
+          data:
+            entity_id: light.bedroom_tuya
+            transition: "{{ transition | default(2) }}"
+
+# Advanced control scripts
+script:
+  tuya_advanced_turn_on:
+    sequence:
+      - service: tuya.send_command
+        target:
+          entity_id: "{{ entity_id }}"
+        data:
+          command:
+            - code: scene_data_v2
+              value:
+                mode: 2
+                bright: "{{ (brightness / 255 * 1000) | int }}"
+                transition:
+                  duration: "{{ (transition * 1000) | int }}"
+                  curve: "ease-out"
+                  
+  tuya_advanced_turn_off:
+    sequence:
+      - service: tuya.send_command
+        target:
+          entity_id: "{{ entity_id }}"
+        data:
+          command:
+            - code: scene_data_v2
+              value:
+                mode: 2
+                bright: 10
+                transition:
+                  duration: "{{ (transition * 1000) | int }}"
+                  curve: "ease-in"
+      - delay: "{{ transition }}"
+      - service: light.turn_off
+        target:
+          entity_id: "{{ entity_id }}"
+```
+
+### D. Performance Optimization Examples
+
+**Rate-Limited Continuous Dimming Script:**
+
+```yaml
+script:
+  optimized_continuous_dimming:
+    sequence:
+      # Detect optimal dimming method for device
+      - service: python_script.detect_tuya_capabilities
+        data:
+          entity_id: "{{ entity_id }}"
+        response_variable: capabilities
+        
+      # Use best available method
+      - choose:
+          # Prefer raw serial commands
+          - conditions:
+              - "{{ capabilities.raw_serial_commands }}"
+            sequence:
+              - service: tuya.send_raw_command
+                data:
+                  entity_id: "{{ entity_id }}"
+                  command: "03{{ '00' if direction == 'up' else '01' }}01{{ '%02x' % rate }}"
+                  
+          # Fallback to scene_data_v2
+          - conditions:
+              - "{{ capabilities.scene_data_v2 }}"
+            sequence:
+              - service: script.scene_data_v2_continuous_dimming
+                data:
+                  entity_id: "{{ entity_id }}"
+                  direction: "{{ direction }}"
+                  rate: "{{ rate }}"
+                  
+          # Last resort: careful incremental updates
+          default:
+            - service: script.rate_limited_incremental_dimming
+              data:
+                entity_id: "{{ entity_id }}"
+                direction: "{{ direction }}"
+                rate: "{{ rate }}"
+```
 
