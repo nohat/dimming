@@ -9,25 +9,25 @@ This project proposes a fundamental enhancement to Home Assistant's lighting con
 ## 📚 Quick Start Guide
 
 ### New to this project?
-1. **Start here**: [Core Architecture Proposal](architecture.md) - The main architectural document
-2. **Understand the scope**: [Scope & Requirements](scope.md)
-3. **See the big picture**: [Project Concepts](pro_concepts.md)
+1. **Start here**: [Core Architecture Proposal](architecture/architecture.md) - The main architectural document
+2. **Understand the scope**: [Scope & Requirements](architecture/scope.md)
+3. **See the big picture**: [Project Concepts](architecture/pro_concepts.md)
 
 ### Ready to dive deeper?
-- **Technical Strategy**: Browse the [Technical Strategy](ha_strategy.md) section for implementation details
-- **Integration Support**: Check [Integration Guides](top_lighting_integrations.md) for platform-specific information
-- **Implementation Plans**: Review [Implementation](eng_execution.md) for execution details
+- **Technical Strategy**: Browse the [Technical Strategy](technical-strategy/ha_strategy.md) section for implementation details
+- **Integration Support**: Check [Integration Guides](integration-guides/top_lighting_integrations.md) for platform-specific information
+- **Implementation Plans**: Review [Implementation](implementation/eng_execution.md) for execution details
 
 ## 🔗 Key Documents
 
 | Document | Description |
 |----------|-------------|
-| [Architecture Proposal](architecture.md) | Main technical proposal for universal lighting control |
-| [Project Plan](project_plan.md) | High-level project timeline and milestones |
-| [Home Assistant Strategy](ha_strategy.md) | Core Home Assistant integration approach |
-| [ESPHome Proposal](esphome_proposal.md) | ESPHome-specific implementation strategy |
-| [Capability Matrix](capability_matrix.md) | Device and protocol capability comparison |
-| [Engineering Execution](eng_execution.md) | Detailed implementation roadmap |
+| [Architecture Proposal](architecture/architecture.md) | Main technical proposal for universal lighting control |
+| [Project Plan](architecture/project_plan.md) | High-level project timeline and milestones |
+| [Home Assistant Strategy](technical-strategy/ha_strategy.md) | Core Home Assistant integration approach |
+| [ESPHome Proposal](technical-strategy/esphome_proposal.md) | ESPHome-specific implementation strategy |
+| [Capability Matrix](integration-guides/capability_matrix.md) | Device and protocol capability comparison |
+| [Engineering Execution](implementation/eng_execution.md) | Detailed implementation roadmap |
 
 ## 🚀 Project Goals
 
@@ -56,4 +56,4 @@ Use the navigation menu on the left to explore all documentation sections:
 
 ---
 
-*This documentation is part of an ongoing effort to enhance Home Assistant's lighting control capabilities. For questions or feedback, please refer to the [Kickoff Post](kickoff_post.md) for community discussion links.*
+*This documentation is part of an ongoing effort to enhance Home Assistant's lighting control capabilities. For questions or feedback, please refer to the [Kickoff Post](resources/kickoff_post.md) for community discussion links.*

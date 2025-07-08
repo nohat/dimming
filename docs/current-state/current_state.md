@@ -300,7 +300,7 @@ This analysis demonstrates the clear need for the Universal Smart Lighting Contr
 ## Next Steps
 
 This current state analysis directly informs the requirements and architecture outlined in:
-- [Core Architecture Proposal](architecture.md)
-- [Technical Strategy](ha_strategy.md)
-- [Implementation Plan](eng_execution.md)
+- [Core Architecture Proposal](../architecture/architecture.md)
+- [Technical Strategy](../technical-strategy/ha_strategy.md)
+- [Implementation Plan](../implementation/eng_execution.md)
 
