@@ -114,26 +114,3 @@ The **Multilevel Switch Command Class (0x26)** is the primary one for dimming, a
   lights with native dynamic commands and transitions.
 
 ______________________________________________________________________
-
-### General Considerations for Both Integrations
-
-- **Fallback to Simulation:** Crucially, if a specific ZHA/Z-Wave device _doesn't_ support the native `Move`, `Stop`, or
-  `Step` commands (e.g., an older Zigbee Light Link 1.0 device that only supports `Move to Level`), these integrations
-  would **not** declare `LightEntityFeature.DYNAMIC_CONTROL`. In such cases, the Home Assistant Core's
-  `LightTransitionManager` (from PR 3.3) would detect the absence of native support but the presence of
-  `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` (which the integration would generally declare if it's a dimmable
-  light), and Home Assistant would then **simulate** the `move`/`stop` by sending rapid `Set` or `Move to Level`
-  commands.
-- **Color Control:** Similar `Move`/`Stop` concepts exist for the Zigbee Color Control Cluster and Z-Wave Color Switch
-  Command Class. These would be extended to handle `dynamic_control` for color as well, mapping to
-  hue/saturation/color temperature changes.
-- **Rate/Duration Mapping:** The `speed` and `ramp_time` parameters in `dynamic_control` will need careful mapping to
-  Zigbee's "rate" or Z-Wave's "duration" fields, potentially involving scaling or predefined steps to ensure smooth
-  device-side operation.
-- **Device Quirk/Configuration:** Some devices might have specific quirks or configuration parameters that influence how
-  these commands behave. The integrations might need to account for these (e.g., via ZHA quirks or Z-Wave JS device
-  configurations).
-
-By implementing these updates, Home Assistant will be able to speak the native "dynamic control" language of Zigbee and
-Z-Wave devices directly, providing the best possible performance and responsiveness when supported, while maintaining a
-consistent user experience through intelligent simulation for other devices.

@@ -42,7 +42,7 @@ lighting.
 
 ### 3.1. New `LightEntityFeature` Flags (Home Assistant Core)
 
-To declare granular capabilities for native and simulated dynamic control:
+To declare native capabilities for dynamic control:
 
 - `LightEntityFeature.TRANSITION` (Existing: `0x20` / `32`): Device natively handles `transition` parameter (e.g.,
   `move_to_level_with_on_off` in Zigbee).
@@ -50,11 +50,7 @@ To declare granular capabilities for native and simulated dynamic control:
 - `LightEntityFeature.DYNAMIC_CONTROL` (New: `0x40` / `64`): Device natively handles continuous `move`/`stop` and `step`
   commands (e.g., Zigbee `Move`/`Stop Level` or Z-Wave `Start/Stop Level Change`).
 
-- `LightEntityFeature.TRANSITION_SIMULATED` (New: `0x80` / `128`): The integration (or HA Core) can simulate a smooth
-  `transition` for this device if `TRANSITION` is not present.
-
-- `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` (New: `0x100` / `256`): The integration (or HA Core) can simulate
-  `move`/`stop`/`step` dynamic control if `DYNAMIC_CONTROL` is not present.
+Detailed behavior, background, and constraints for these fallback flags are centralized in [`technical-strategy/simulated_dimming.md`](../technical-strategy/simulated_dimming.md).
 
 ### 3.2. Extended `light.turn_on` Service Schema (Home Assistant Core)
 
@@ -132,28 +128,17 @@ A new state attribute will be introduced on `light` entities to indicate their c
 
 - `moving_color_down`: Color is actively changing in another direction.
 
-- Prefixes like `simulated_` (e.g., `simulated_transitioning`, `simulated_moving_brightness_up`) would be used when Home
-  Assistant Core is performing the simulation.
-
 ### 3.4. `LightTransitionManager` (Conceptual Role in Home Assistant Core)
 
-This is not necessarily a single class, but a set of coordinated logic within
-`homeassistant/components/light/__init__.py` responsible for:
+This is a core component within `homeassistant/components/light/__init__.py` responsible for:
 
-- **Capability Check:** Inspecting `LightEntity.supported_features` to determine native vs. simulated handling.
+- **Capability Check:** Inspecting `LightEntity.supported_features` to determine native capabilities.
 
-- **Simulation Orchestration:** If simulation is required (`_SIMULATED` flags set):
+- **Command Translation:** Converting high-level `dynamic_control` parameters into device-specific protocol commands.
 
-    - Calculating intermediate steps based on `transition`, `dynamic_control`, `speed`, and `curve`.
+- **State Management:** Updating the entity's `dynamic_state` attribute to reflect the current activity.
 
-    - Scheduling `async_call_later` (or similar) to send incremental `light.turn_on` commands back to the integration.
-
-    - Managing and canceling ongoing simulations when new commands arrive.
-
-    - Updating the entity's `dynamic_state` attribute.
-
-- **Passing Native Commands:** If native support is detected, packaging `dynamic_control` parameters and passing them
-  directly to the underlying integration.
+- **Native Command Handling:** Packaging and passing `dynamic_control` parameters to the underlying integration when supported.
 
 ## 4\. Dimming Curves & Human Perception
 
@@ -223,7 +208,7 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
    brightness into the corresponding _linear_ brightness value (0-255 or 0-99/100, depending on the device's native
    scale).
 
-3. **Stepped Commands:** For simulated transitions/dynamic control, the manager calculates intermediate steps along this
+3. **Native Commands:** The manager sends the appropriate protocol-specific commands to devices that support dynamic control.
    converted linear scale.
 
 4. **Device Command:** The final, linearly scaled brightness value is sent as a standard `SET` command (e.g., Zigbee
@@ -231,7 +216,11 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
 
 **Why this approach?**
 
-- **Universal Compatibility:** Ensures all dimmable lights in HA can benefit from perceptual dimming, even if their
+- **Native-First:** Focuses on leveraging device capabilities for optimal performance and reliability.
+
+- **Consistent Behavior:** Ensures consistent behavior across different device types and protocols.
+
+- **Extensible:** Allows for future expansion as more devices support native dynamic control features.
   hardware doesn't natively support it.
 
 - **Consistency:** The same curve logic is applied uniformly across different protocols.
@@ -433,7 +422,6 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
 
 #### PR 3.1: HA Core - Introduce New `LightEntityFeature` Flags
 
-- **Description:** Add `LightEntityFeature.TRANSITION_SIMULATED` and `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` to
   Home Assistant's `LightEntityFeature` enum.
 
 - **Detailed Changes:**
@@ -446,84 +434,74 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
 
 - **Testing:** Simple Python tests to confirm enum values.
 
-#### PR 3.2: HA Core - Universal Transition Simulation Logic
+#### PR 3.2: HA Core - Native Dynamic Control Implementation
 
-- **Description:** Implement the core logic within `light/__init__.py` to simulate `transition_length` for entities that
-  support `TRANSITION_SIMULATED` but not native `TRANSITION`. This will include the curve application logic.
-
-- **Detailed Changes:**
-
-    - **File:** `homeassistant/components/light/__init__.py` (Service handler for `light.turn_on`).
-
-    - **Logic (Conceptual `LightTransitionManager`):**
-
-        1. **Intercept `turn_on`:** When `turn_on` is called with `transition`.
-
-        2. **Check Native:** If `light.supported_features` has `TRANSITION`, pass call to integration.
-
-        3. **Check Simulated:** Else if `light.supported_features` has `TRANSITION_SIMULATED`:
-
-            - Read `current_brightness` and `target_brightness` (and color if applicable).
-
-            - Identify the `curve` (default to `logarithmic` if not specified in `dynamic_control`).
-
-            - **Curve Calculation:** Implement Python functions for `linear`, `logarithmic` (based on DALI), `s_curve`,
-              `square_law`, and custom point interpolation. These functions will map a `progress` (0-1) to
-              an `output_percentage` (0-100%).
-
-            - **Step Calculation:** Calculate a series of `N` intermediate brightness (0-255) and color values. The
-              values will be determined by applying the chosen `curve` to a linear progression of
-              "perceived" time/progress.
-
-            - **Scheduling:** Use `async_call_later` or similar to schedule `N` calls back to the light entity's
-              `async_turn_on` (without `transition`) at regular intervals over the `transition_length`.
-
-            - **State Update:** Set `light.dynamic_state` to `simulated_transitioning`.
-
-            - **Cancellation:** Implement a mechanism to cancel an ongoing simulation if a new `light.turn_on` command
-              for the same entity is received.
-
-    - **Considerations:** Optimal refresh rate for simulation (e.g., 20-50ms) to balance smoothness and network load.
-      Handling different light models' min/max brightness/color values.
-
-- **Interactions:** Uses new `LightEntityFeature` flags.
-
-- **Testing:** Unit tests for curve functions. Integration tests verifying smooth dimming/color transitions for devices
-  without native `TRANSITION` but with `TRANSITION_SIMULATED`.
-
-#### PR 3.3: HA Core - Universal Dynamic Control Simulation Logic
-
-- **Description:** Extend the `LightTransitionManager` in `light/__init__.py` to handle `dynamic_control` parameters for
-  lights that have `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED`.
+- **Description:** Implement the core logic within `light/__init__.py` to handle native dynamic control for entities that support it.
 
 - **Detailed Changes:**
 
     - **File:** `homeassistant/components/light/__init__.py` (Service handler for `light.turn_on`).
 
-    - **Logic (extension of PR 3.2):**
+    - **Logic (Native Dynamic Control Handler):**
 
-        1. **Intercept `turn_on` with `dynamic_control`.**
+        1. **Intercept `turn_on`:** When `turn_on` is called with `dynamic_control`.
 
-        2. **Check Native:** If `light.supported_features` has `DYNAMIC_CONTROL`, pass `dynamic_control` directly to
+        2. **Check Native Support:** Verify `light.supported_features` includes `DYNAMIC_CONTROL`.
+
+        3. **Process Native Commands:**
+            - For `move` commands: Translate to device-specific movement commands
+            - For `stop` commands: Send immediate stop command to device
+            - For `step` commands: Calculate target state based on current state and step parameters
+
+        4. **State Management:** Update `light.dynamic_state` to reflect the current activity.
+
+    - **Considerations:**
+        - Handle device disconnections gracefully
+        - Ensure proper cleanup of resources
+        - Implement proper error handling for unsupported operations
+
+- **Interactions:** Uses `LightEntityFeature` flags to determine supported capabilities.
+
+- **Testing:**
+    - Unit tests for command translation logic
+    - Integration tests with actual devices
+    - Verification of state updates and error conditions
+
+#### PR 3.3: HA Core - Dynamic State Management
+
+- **Description:** Implement state management for dynamic control features in Home Assistant Core.
+
+- **Detailed Changes:**
+
+    - **File:** `homeassistant/components/light/__init__.py`
+
+    - **Logic:**
+        1. **State Tracking:**
+            - Maintain current dynamic state (`idle`, `moving_brightness_up`, `moving_brightness_down`, etc.)
+            - Track active speed and curve profiles
+            - Monitor target states for move operations
+
+        2. **Event Handling:**
+            - Emit events for state changes
+            - Handle device state updates
+            - Manage timeouts and error conditions
+
+        3. **API Integration:**
+            - Expose dynamic control state through the REST API
+            - Update WebSocket API for real-time updates
+
+    - **Considerations:**
+        - Thread safety for state updates
+        - Efficient state propagation
+        - Clean resource management
+
+- **Testing:**
+    - Unit tests for state management
+    - Integration tests with the frontend
+    - Performance testing with multiple devices
            integration.
 
-        3. **Check Simulated:** Else if `light.supported_features` has `DYNAMIC_CONTROL_SIMULATED`:
-
-            - **`type: "move"`:** Calculate incremental steps based on `direction`, `speed`, and `curve`. Continuously
-              schedule `async_call_later` to send new `light.turn_on` commands. Update `dynamic_state` to
-              `simulated_moving_brightness_up`/`down`/`color_up`/`down`. Manage reaching min/max.
-
-            - **`type: "stop"`:** Immediately cancel ongoing `move` simulation and send a final `light.turn_on` command
-              to the light's current brightness/color to halt movement cleanly. Update `dynamic_state` to
-              `idle`.
-
-            - **`type: "step"`:** Calculate the new target brightness/color based on `step_size` and `direction`. Send a
-              single `light.turn_on` to this new target, optionally with a short `transition` (handled by
-              PR 3.2's simulation if native `TRANSITION` is absent). Update `dynamic_state` to
-              `simulated_transitioning` for the step duration.
-
-    - **Considerations:** Ensure robust cancellation logic. Handling `duration` for `move` and `step` to calculate
-      appropriate `speed`/`transition`.
+    - **Considerations:** Ensure robust command handling and proper state management for native dynamic control features.
 
 - **Interactions:** Uses new `LightEntityFeature` flags.
 
@@ -547,9 +525,7 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
               device (based on its API version or reported capabilities) supports native dynamic control
               (from ESPHome PR 2.1+).
 
-            - Always include `LightEntityFeature.TRANSITION_SIMULATED` and
-              `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` for dimmable ESPHome lights, allowing HA Core
-              to simulate if native is not available. This provides a layered fallback.
+              to ensure consistent behavior across all devices.
 
         - **Sending `dynamic_control`:** In `async_turn_on`, if `dynamic_control` is present and
           `LightEntityFeature.DYNAMIC_CONTROL` is declared (meaning the device supports it natively), package
@@ -559,13 +535,11 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
           `dynamic_state` (and `active_speed_profile`, `active_curve_profile`, `dynamic_target_brightness`)
           from the ESPHome API into the Home Assistant `light` entity's state attributes.
 
-    - **Considerations:** Ensure smooth transition of control from HA simulation to native ESPHome control when firmware
-      is updated.
+    - **Considerations:** Ensure proper state synchronization between ESPHome devices and Home Assistant.
 
 - **Interactions:** Depends on ESPHome PRs 2.1 and 2.4. Integrates with HA Core PRs 3.1, 3.2, 3.3.
 
-- **Testing:** Integration tests with ESPHome devices running new firmware and old firmware. Verify native control is
-  preferred, and simulation kicks in when needed. Verify `dynamic_state` is accurate.
+- **Testing:** Integration tests with ESPHome devices to verify native control functionality and accurate `dynamic_state` reporting.
 
 ### Phase 3b: Integration-Specific Updates (ZHA, Z-Wave JS)
 
@@ -585,7 +559,8 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
 
         - **Feature Declaration:** For `ZhaLight` entities: If the device supports the Level Control Cluster and its
           `Move`, `Stop`, and `Step` commands (determined by cluster capabilities in `zigpy`), add
-          `LightEntityFeature.DYNAMIC_CONTROL` to `_attr_supported_features`.
+          `LightEntityFeature.DYNAMIC_CONTROL` to `_attr_supported_features`. Devices without native support
+          will not expose these features.
 
         - **`async_turn_on` Mapping:**
 
@@ -607,8 +582,6 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
           `curve` parameter in `dynamic_control` will be ignored here, as HA Core's `LightTransitionManager`
           is responsible for applying the curve by sending stepped linear commands (fallback).
 
-        - **Simulated Fallback:** Ensure `LightEntityFeature.TRANSITION_SIMULATED` and
-          `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` are generally declared for ZHA dimmable lights, so HA
           Core's simulation can take over if native `TRANSITION` or `DYNAMIC_CONTROL` are not present or
           applicable.
 
@@ -676,10 +649,9 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
             - If `dynamic_control: {type: 'stop', ...}`: Call
               `node.async_send_command(CommandClass.MULTILEVEL_SWITCH.commands.StopLevelChange)`.
 
-            - `type: 'step'`: Z-Wave doesn't have a direct "step" command. This would likely be handled by calculating
-              the new target and sending a `Multilevel Switch Set` command with a short `duration` (which
-              HA Core's `LightTransitionManager` would handle via simulation if native `TRANSITION` is not
-              present, or the device natively).
+            - `type: 'step'`: Z-Wave doesn't have a direct "step" command. This would be handled by calculating
+              the new target and sending a `Multilevel Switch Set` command with appropriate parameters
+              based on the device's capabilities.
 
         - **Rate/Duration Derivation:** Map `speed` and `duration` from `dynamic_control` to Z-Wave's "duration" field
           (in seconds or 10ms ticks).
@@ -688,16 +660,11 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
           if supported.
 
         - **Curve Handling:** Z-Wave JS also typically doesn't support dynamic curves at the protocol level. The `curve`
-          parameter will be handled by HA Core's `LightTransitionManager` (fallback).
-
-        - **Simulated Fallback:** Ensure `LightEntityFeature.TRANSITION_SIMULATED` and
-          `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` are generally declared for Z-Wave dimmable lights, so
-          HA Core's simulation can take over if native `TRANSITION` or `DYNAMIC_CONTROL` are not present or
-          applicable.
+          parameter will be used to optimize the transition when sending commands to devices that support it.
 
 - **Interactions:** Integrates `dynamic_control` with native Z-Wave commands.
 
-- **Testing:** Extensive testing with various Z-Wave dimmers and bulbs. Verify native vs. simulated behavior.
+- **Testing:** Extensive testing with various Z-Wave dimmers and bulbs to verify native control functionality and state reporting.
 
 #### PR ZWAVE\_JS.2: Z-Wave JS - Report `dynamic_state` from Z-Wave Devices
 
@@ -802,16 +769,15 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
 
     - **Content:**
 
-        - **Home Assistant Light Domain:** Detailed explanation of the `dynamic_control` service parameter, new
-          `LightEntityFeature` flags, `dynamic_state` attribute. Explanation of native vs. simulated handling.
-          Guidance on choosing dimming curves.
+        - **Home Assistant Light Domain:** Comprehensive documentation of the `dynamic_control` service parameter, new
+          `LightEntityFeature` flags, and `dynamic_state` attribute. Detailed guidance on implementing and using
+          native dynamic control features.
 
-        - **ESPHome Light Component:** New YAML options for `dynamic_control_profiles`, explanation of native dynamic
-          control. Examples of local button bindings.
+        - **ESPHome Light Component:** Complete reference for `dynamic_control_profiles` YAML configuration, with
+          examples of native dynamic control implementation and local button bindings.
 
-        - **ZHA/Z-Wave JS Integrations:** Document which features are natively supported and which rely on HA Core simulation.
-
-        - **Developer Guidelines:** How other integration developers can adopt `DYNAMIC_CONTROL` and `_SIMULATED` features.
+        - **ZHA/Z-Wave JS Integrations:** Documentation of natively supported features and implementation details
+          for each integration, focusing on protocol-specific capabilities.
 
 - **Interactions:** Critical for user adoption and ecosystem growth.
 
@@ -826,8 +792,8 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
 
     - Publish examples in the Home Assistant Community Forum and Blueprints exchange.
 
-    - Examples: "Sunrise Alarm with Perceptual Curve", "Hold-to-Dim for Any Light (with HA simulation fallback)",
-      "Dynamic Scene Changes".
+    - Examples: "Sunrise Alarm with Perceptual Curve", "Native Hold-to-Dim Implementation",
+      "Dynamic Scene Transitions with Native Controls".
 
 - **Interactions:** Drives adoption and demonstrates new capabilities.
 
@@ -865,25 +831,9 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
         - If `transition` is present, passes `transition` (and other `turn_on` data) directly to the integration's
           `async_turn_on` method.
 
-    - **Else if `DYNAMIC_CONTROL_SIMULATED` is supported:**
+    - **Else (Native Capabilities Only):**
 
-        - **SIMULATION LOGIC:** The `LightTransitionManager` initiates software-based control.
-
-            - **Curve Application:** Converts perceived input (from `dynamic_control` or `transition` target) to linear
-              output values based on the `curve` parameter (defaulting to `logarithmic`).
-
-            - **Step Generation:** Calculates small, incremental steps for brightness/color.
-
-            - **Scheduling:** Uses `async_call_later` to schedule rapid, repeated `light.turn_on` calls (without
-              `transition` or `dynamic_control`) back to the integration, sending these discrete steps.
-
-            - **State Update:** Sets the entity's `dynamic_state` to `simulated_moving_...` or `simulated_transitioning`.
-
-            - **Cancellation:** Manages canceling existing scheduled calls if a new command arrives.
-
-    - **Else (No Native or Simulated Advanced Control):**
-
-        - `transition` and `dynamic_control` parameters are effectively ignored.
+        - `dynamic_control` parameters are ignored.
 
         - Standard `brightness`/`color` changes are sent as a single, immediate command to the integration.
 
@@ -896,8 +846,7 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
     - **If native `dynamic_control` received (e.g., from new ESPHome firmware):** Translates to protocol-specific
       "move/stop" or "step" commands and sends to device.
 
-    - **If simulated `turn_on` steps received:** Translates each discrete step to a standard "set brightness/color"
-      command with an optional small duration for smoothness and sends to device.
+    - **If standard `turn_on` received:** Processes the command according to the device's native capabilities.
 
 4. **Device:** Executes the command.
 
@@ -923,8 +872,7 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
     - Parses new brightness, color, and _`dynamic_state`_ (for new ESPHome firmware or inferred from ZHA/Z-Wave
       `Start/Stop Level Change` command reports).
 
-    - If HA Core is simulating, the `LightTransitionManager` will also be updating the `dynamic_state`. The
-      integration's reported state would take precedence if it indicates native activity.
+    - The integration's reported state updates the `dynamic_state` attribute to reflect the device's current activity.
 
 4. **Home Assistant Entity State Update:** The `light` entity's state in Home Assistant is updated, including the new
    `dynamic_state` attribute, which is then reflected in the UI and available for automations.
@@ -936,11 +884,9 @@ All proposed changes prioritize backward compatibility:
 - **New Parameters are Optional:** `dynamic_control` is an entirely new, optional parameter to `light.turn_on`. Existing
   automations will continue to function as before.
 
-- **Feature Flags:** The new `LightEntityFeature` flags (e.g., `_SIMULATED`) are additive. Integrations can gradually
   opt-in or expose these capabilities.
 
 - **Graceful Fallback:** The layered approach ensures that if a device or its integration doesn't support a new feature,
-  Home Assistant will either simulate it (if the `_SIMULATED` flag is set) or gracefully ignore the parameter,
   preserving current behavior.
 
 - **ESPHome Firmware:** New ESPHome firmware will be backward compatible with older Home Assistant versions (they just
@@ -955,11 +901,9 @@ All proposed changes prioritize backward compatibility:
 - **Integration-Specific Optimizations:** Further research into specific quirks or advanced features of Zigbee and
   Z-Wave devices that could offer even more native dynamic control or state reporting.
 
-- **Battery Devices:** How do frequent commands for simulation affect battery life for battery-powered light devices?
-  This may need to be a documented trade-off or have opt-out options.
+- **Battery Devices:** Native dynamic control is designed to be battery-efficient by leveraging device capabilities rather than frequent commands.
 
-- **Group Behavior:** How do these new features interact with light groups? Ideally, the group entity would expose the
-  same capabilities and orchestrate commands to members.
+- **Group Behavior:** Light groups will expose the intersection of capabilities of all member lights. Commands will only be sent to members that support the requested feature.
 
 - **Frontend UI:** Develop rich UI controls (e.g., sliders that react dynamically, "move" buttons) that fully leverage
   the new `dynamic_control` service calls and `dynamic_state` feedback.

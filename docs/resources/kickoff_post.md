@@ -28,7 +28,7 @@ The sophisticated "move" and "stop" commands found in industry standards like Zi
 
 Imagine:
 
-- **Every light smoothly transitions** when you ask it to, whether it's a slow sunrise simulation or a quick fade.
+- **Every light responds natively** when you ask it to, whether it's a gradual sunrise or a quick fade.
 
 - **"Hold-to-dim" just works** for any dimmable light, with instant responsiveness from your physical buttons or UI.
 
@@ -39,10 +39,9 @@ Imagine:
 - **You get real-time feedback** on what your lights are actively doing, like "dimming up" or "transitioning to warm
   white."
 
-This project will introduce a layered control system that intelligently orchestrates lighting behavior.
-Capable devices (like those running ESPHome with new firmware) will handle dynamic changes directly on-device for ultimate responsiveness
-.
-For devices that don't natively support these features, Home Assistant Core will step in to _simulate_ the desired behavior, ensuring consistency across your entire smart home.
+This project will introduce a standardized approach to lighting control that leverages native device capabilities.
+Devices with advanced features (like those running ESPHome with new firmware) will handle dynamic changes directly on-device for optimal performance and responsiveness.
+For devices without native support, Home Assistant will provide a clean, consistent experience by gracefully handling unsupported features.
 
 ## Why This Matters: Context, Rationale, and Justification
 
@@ -56,8 +55,7 @@ This isn't just about adding new features; it's about fundamentally improving th
    scripts for basic dimming behavior!
 
 3. **Improved Performance & Reliability:** Offloading high-frequency calculations and continuous dimming/color changes
-   to the device (ESPHome) or centralizing efficient simulation in Home Assistant Core will reduce network chatter
-   and latency, making your lights more responsive and your network less congested.
+   to the device (ESPHome) reduces network chatter and latency, making your lights more responsive and your network less congested.
 
 4. **Alignment with Industry Standards:** By introducing concepts like `move`/`stop` actions and explicit dynamic state
    reporting, we're aligning Home Assistant's `light` domain more closely with robust lighting standards like Matter
@@ -77,8 +75,7 @@ Our plan involves simultaneous, incremental enhancements in both ESPHome and Hom
 
 - **Home Assistant Core:** We'll update the `light.turn_on` service to accept powerful new `dynamic_control` parameters.
   Home Assistant will intelligently determine if a light natively supports these commands (like our new ESPHome
-  firmware). If not, Home Assistant will _simulate_ the transition or dynamic control by sending carefully timed
-  incremental commands, ensuring a smooth experience for all lights.
+  firmware). For devices without native support, Home Assistant will provide a clean, consistent experience by gracefully handling unsupported features.
 
 - **Frontend & Automations:** With the `dynamic_state` exposed, the Home Assistant UI can provide better feedback, and
   automations can become smarter and simpler.
@@ -94,8 +91,8 @@ feature:
 2. **ESPHome Native Dynamic Control:** Implementing on-device continuous brightness/color changes and reporting dynamic
    state to Home Assistant.
 
-3. **Home Assistant Universal Handling:** Core logic in Home Assistant to understand the new dynamic commands, introduce
-   "simulated" capabilities, and orchestrate control for all lights.
+3. **Home Assistant Universal Handling:** Core logic in Home Assistant to understand and manage native dynamic commands
+   across all light integrations, ensuring consistent behavior and graceful degradation for unsupported features.
 
 4. **Ecosystem Integration & UX:** Frontend updates, simplified local button bindings for ESPHome, and comprehensive
    documentation to empower users and developers.

@@ -30,7 +30,7 @@ systems.
    systems
 2. **Declarative Configuration**: Enable simple, declarative mapping between control actions and light behaviors
 3. **Protocol Abstraction**: Abstract away protocol differences through standardized interfaces
-4. **Progressive Enhancement**: Support both software simulation and native hardware acceleration
+4. **Native Hardware Acceleration**: Leverage native hardware capabilities for optimal performance
 5. **Backward Compatibility**: Maintain compatibility with existing automation systems
 
 ### Implementation Phases

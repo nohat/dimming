@@ -257,8 +257,7 @@ For Home Assistant and ESPHome, we can build a layered system that achieves seam
 4. **Error Handling & Fallbacks:**
    - If a device reports an `transition_state` that Home Assistant doesn't understand, it can log a warning and default
      to the `brightness` value.
-   - If a `light.adjust_brightness` command is sent to a device that doesn't support it, the integration attempts the
-     best-effort simulation (rapid `turn_on`s). Home Assistant's state would reflect the simulated transition.
+   - If a `light.adjust_brightness` command is sent to a device that doesn't support it, the integration should defer to the fallback mechanism detailed in [`technical-strategy/simulated_dimming.md`](../technical-strategy/simulated_dimming.md).
 5. **Documentation:** Clear documentation for users and developers on how this hierarchy works, which commands take
    precedence, and what to expect from state attributes during dynamic operations is paramount.
 

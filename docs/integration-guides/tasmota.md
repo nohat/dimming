@@ -49,7 +49,6 @@ more precise.
        - If the Tasmota device supports the `Dimmer` command (which implies support for `Dimmer >`, `<` and `!`),
          **unconditionally add `LightEntityFeature.DYNAMIC_CONTROL`** to its `_attr_supported_features`. This
          is a strong native capability.
-       - Still declare `LightEntityFeature.TRANSITION_SIMULATED` and `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` as a
          fallback, especially for `transition` (due to `Fade` unreliability) or if the specific Tasmota
          firmware version or `SetOption` doesn't fully expose `Dimmer >` / `<` behavior as expected.
   2. **Mapping `dynamic_control` to MQTT Payloads:**
@@ -152,7 +151,6 @@ This would fit into **Phase 3b: Integration-Specific Updates** of our overall pl
          `LightEntityFeature.DYNAMIC_CONTROL` to its `_attr_supported_features`. We might need to check for
          specific Tasmota `SetOption` values (like `SetOption114`) or infer from the device's advertised
          capabilities.
-       - Always declare `LightEntityFeature.TRANSITION_SIMULATED` and `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` for
          all dimmable Tasmota lights. This is crucial for fallback, given the varying reliability of Tasmota's
          `Fade` and the possibility that a user hasn't configured `Dimmer +`/`-` behavior.
   2. **Mapping `dynamic_control` to MQTT Payloads:**

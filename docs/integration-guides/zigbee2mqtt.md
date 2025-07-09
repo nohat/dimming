@@ -51,7 +51,6 @@ This would fit into **Phase 3b: Integration-Specific Updates** of our overall pl
          devices)
        - Parse any Z2M-specific capability flags from the discovery payload
      - If native Z2M move/stop support is detected, add `LightEntityFeature.DYNAMIC_CONTROL` to `_attr_supported_features`
-     - Always declare `LightEntityFeature.TRANSITION_SIMULATED` and `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` for
        all dimmable Z2M lights as fallback capabilities
   2. **MQTT Topic Configuration:**
      - Extend the existing topic configuration to handle dynamic control commands:

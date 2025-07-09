@@ -32,9 +32,7 @@ or "hold-to-dim" functionality.
   commands for continuous movement (`Move to Level`, `Step`, `Stop`), which are not universally or consistently
   exposed and handled in Home Assistant.
 
-This project aims to address these pain points by introducing a layered hierarchy of state control that prioritizes on-
-device processing where possible and intelligently simulates complex behaviors within Home Assistant for less capable
-devices.
+This project aims to address these pain points by introducing native support for dynamic lighting control, where features are only available on devices that support them natively. Unsupported service calls will be gracefully ignored, similar to how unsupported `transition` parameters are handled today. The focus is on leveraging native device capabilities rather than simulating unsupported features.
 
 ## 4. Key Deliverables
 
@@ -54,10 +52,7 @@ devices.
 
     - Extended `light.turn_on` service schema to support `dynamic_control` parameters.
 
-    - Introduction of new `LightEntityFeature` flags for `TRANSITION_SIMULATED` and `DYNAMIC_CONTROL_SIMULATED`.
-
-    - Centralized `LightTransitionManager` (or similar core logic) to intelligently simulate transitions and dynamic
-      control for lights that don't support them natively.
+    - Centralized `LightTransitionManager` to coordinate native dynamic control capabilities across different light integrations.
 
     - Consumption and exposure of ESPHome's new `dynamic_state` attributes.
 
@@ -136,36 +131,29 @@ devices.
 
         - **Output:** Home Assistant (via debug tools) can now observe the light's current dynamic activity.
 
-### Phase 3: Home Assistant Universal Handling
+### Phase 3: Home Assistant Native Control Integration
 
-- **Goal:** Enable Home Assistant Core to understand and orchestrate universal transitions and dynamic control,
-  including simulation for non-native devices.
+- **Goal:** Enable Home Assistant Core to understand and orchestrate native dynamic control capabilities across different light integrations.
 
 - **Timeline:** 8-10 weeks.
 
-    - **PR 3.1: HA Core - Introduce `LightEntityFeature.TRANSITION_SIMULATED`**
+    - **PR 3.1: HA Core - New `LightEntityFeature` for Dynamic Control**
 
         - **Description:** Add a new `LightEntityFeature` flag in Home Assistant Core to allow integrations to declare
-          their ability to simulate transitions.
+          their native support for dynamic control features.
 
-        - **Output:** Standardized declaration for simulated transition capability.
+        - **Output:** Standardized declaration for native dynamic control capability.
 
-    - **PR 3.2: HA Core - Universal Transition Simulation Logic**
+    - **PR 3.2: HA Core - Native Dynamic Control Integration**
 
-        - **Description:** Implement the core logic within `light/__init__.py` to simulate `transition_length` for
-          entities that support `TRANSITION_SIMULATED` but not native `TRANSITION`.
+        - **Description:** Implement the core logic within `light/__init__.py` to handle `dynamic_control` for
+          lights that natively support it. This will provide a consistent interface for all integrations.
 
-        - **Output:** All lights can now honor the `transition:` parameter, providing smooth fades (native or
-          simulated). This is a _major_ win for UX.
+    - **PR 3.3: HA Core - Graceful Degradation for Unsupported Features**
 
-    - **PR 3.3: HA Core - Introduce `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` & Universal Dynamic Control
-      Simulation Logic**
-
-        - **Description:** Add `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` and implement core logic in
-          `light/__init__.py` to simulate `dynamic_control` for entities that declare
-          `DYNAMIC_CONTROL_SIMULATED` but not native `DYNAMIC_CONTROL`.
-
-        - **Output:** HA can now simulate "move/stop" commands for any dimmable light, enabling consistent behavior.
+        - **Description:** Implement proper handling for unsupported `dynamic_control` commands, ensuring they are
+          gracefully ignored by devices that don't support them natively.
+        - **Output:** Clear and consistent behavior when unsupported features are requested.
 
     - **PR 3.4: HA Core - ESPHome Integration Update (Orchestration & State Consumption)**
 
@@ -177,8 +165,6 @@ devices.
 
             - Set `LightEntityFeature.DYNAMIC_CONTROL` for ESPHome lights detected with native support.
 
-            - Conditionally set `LightEntityFeature.TRANSITION_SIMULATED` and
-              `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` for ESPHome devices if native support is not
               detected.
 
         - **Output:** ESPHome devices are fully integrated with HA's new capabilities; HA accurately reflects ESPHome's
@@ -211,9 +197,7 @@ devices.
 
             - New YAML configurations and service calls.
 
-            - Explanation of the control hierarchy and simulation.
-
-            - Guidelines for other integration developers to adopt `_SIMULATED` features.
+            - Explanation of the control hierarchy and native feature support.
 
             - Best practices for automations using dynamic control.
 
@@ -256,15 +240,9 @@ devices.
 
     - _Mitigation:_ Incremental PRs, clear internal design documents, extensive unit and integration tests.
 
-- **Performance Overhead of Simulation:**
+- **Limited Device Support:**
 
-    - _Mitigation:_ Optimize the `LightTransitionManager` for efficiency. Prioritize native control whenever available.
-      Document best practices for large installations.
-
-- **Network Congestion from Simulation:**
-
-    - _Mitigation:_ Fine-tune update rates for simulated transitions. Encourage adoption of native `DYNAMIC_CONTROL` for
-      high-frequency updates.
+    - _Mitigation:_ Clearly document which features are supported by which device types and integrations. Provide guidance on selecting compatible hardware for full dynamic control capabilities.
 
 - **Backward Compatibility Issues:**
 

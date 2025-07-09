@@ -5,22 +5,19 @@ This document provides a step-by-step guide for a software engineer/community me
 
 ## 1. Project Scope & Goal
 
-The immediate goal for this plan is to enable **smooth, interruptible continuous dimming and color adjustment** using `move` and `stop` commands, along with clear `dynamic_state` feedback
-. This will be achieved by:
+The immediate goal for this plan is to enable **smooth, interruptible continuous dimming and color adjustment** using native `move` and `stop` commands, along with clear `dynamic_state` feedback. This will be achieved by:
 
 - Adding native `move`/`stop` capabilities to ESPHome lights.
 
 - Extending Home Assistant's `light.turn_on` service to support a `dynamic_control` parameter with `type: "move"` and
-  `type: "stop"`.
+  `type: "stop"` for devices that natively support these features.
 
 - Updating the ESPHome integration in Home Assistant to leverage these native capabilities.
 
-- Introducing a `dynamic_state` attribute to `light` entities for real-time feedback.
-
-- Laying the groundwork for Home Assistant Core to simulate `move`/`stop` for devices without native support.
+- Introducing a `dynamic_state` attribute to `light` entities for real-time feedback on native dynamic control operations.
 
 This plan focuses on ESPHome as the initial native implementation target due to its end-to-end control, making it easier
-to demonstrate the full workflow.
+to demonstrate the full workflow with native device capabilities.
 
 ## 2. General Open-Source Contribution Workflow
 
@@ -30,11 +27,10 @@ Before diving into specific PRs, here's the standard workflow for contributing t
 
 2. **Clone Your Fork:** Clone your forked repositories to your local development machine.
 
-````text
+    ```text
     git clone https://github.com/YOUR_GITHUB_USERNAME/home-assistant.git
     git clone https://github.com/YOUR_GITHUB_USERNAME/esphome.git
-
-```
+    ```
 
 3. **Set Up Development Environment:**
 
@@ -45,10 +41,9 @@ Before diving into specific PRs, here's the standard workflow for contributing t
 
 4. **Create a New Branch:** For _each_ PR, create a new, descriptive branch.
 
-```text
-    git checkout -b feature/light-dynamic-control-esphome-move-stop
-
-```
+   ```text
+   git checkout -b feature/light-dynamic-control-esphome-move-stop
+   ```
 
 5. **Implement Changes:** Make your code modifications.
 
@@ -180,7 +175,7 @@ This part focuses entirely on the ESPHome firmware and its Native API.
 
     1. **Protobuf Definition:** Add a new `DynamicControl` message to `api_message.proto`:
 
-```text
+        ```text
         message LightCommand {
           // ... existing fields ...
           optional DynamicControl dynamic_control = 10; // Assign a new field number
@@ -204,7 +199,7 @@ This part focuses entirely on the ESPHome firmware and its Native API.
           optional float step_size = 4; // for STEP type
           optional float duration = 5; // for MOVE/STEP, overrides speed if both
         }
-```
+        ```
 
     2. **`LightCall` Structure:** Update `LightCall` to include a `DynamicControl` struct that mirrors the protobuf
        definition.
@@ -244,7 +239,7 @@ This part focuses entirely on the ESPHome firmware and its Native API.
     1. **Protobuf Definition:** Add a new `dynamic_state` enum field to the `LightStateResponse` message in
        `api_message.proto`:
 
-```text
+        ```text
         message LightStateResponse {
           // ... existing fields ...
           enum DynamicState {
@@ -257,7 +252,7 @@ This part focuses entirely on the ESPHome firmware and its Native API.
           }
           optional DynamicState dynamic_state = 11; // Assign a new field number
         }
-```
+        ```
 
     2. **`LightState` Tracking:** In `light_state.h`/`.cpp`, add an internal `DynamicState` variable to `LightState` and
        update it in `loop()` and `on_light_command` based on whether a transition or dynamic move is active.
@@ -306,7 +301,7 @@ This part focuses on Home Assistant Core and its ESPHome integration.
 
     2. **Initial Handler Logic (Placeholder):** For now, the `async_turn_on` method in `LightEntity` (or the service
        handler) will simply pass this `dynamic_control` parameter to the integration's `async_turn_on` method if
-       the integration declares `LightEntityFeature.DYNAMIC_CONTROL`. No simulation logic yet, just passing
+       the integration declares `LightEntityFeature.DYNAMIC_CONTROL`. The integration will only process the command if the device natively supports it.
        through.
 
 - **Testing:**
@@ -332,7 +327,7 @@ This part focuses on Home Assistant Core and its ESPHome integration.
         - Add `LightEntityFeature.DYNAMIC_CONTROL` if the connected ESPHome device's API version (or a new capability
           flag from ESPHome) indicates support for the new `dynamic_control` protobuf message.
 
-        - For now, _do not_ add `_SIMULATED` flags yet. Those come in Part 3.
+        - For now, _do not_ add  flags yet. Those come in Part 3.
 
     2. **Sending `dynamic_control`:** In `EsphomeLight.async_turn_on`:
 
@@ -366,67 +361,7 @@ This part focuses on Home Assistant Core and its ESPHome integration.
 
     - **Manual Testing:** Same as above, but interactive.
 
-### Part 3: Home Assistant Core Simulation & Integration Updates
-
-This part builds on the foundation, enabling the `dynamic_control` service for _all_ lights, even those without native
-support, and integrating specific platforms.
-
-#### **PR 3.1: HA Core - Introduce `LightEntityFeature._SIMULATED` Flags**
-
-- **Goal:** Add the flags that signal HA Core can simulate dynamic control.
-
-- **Files to Modify:**
-
-    - `homeassistant/components/light/__init__.py`
-
-- **Logic to Implement:**
-
-    1. Add `TRANSITION_SIMULATED = 0x80` and `DYNAMIC_CONTROL_SIMULATED = 0x100` to `LightEntityFeature`.
-
-- **Testing:** Simple Python test.
-
-#### **PR 3.2: HA Core - Implement `LightTransitionManager` for `dynamic_control` Simulation**
-
-- **Goal:** Implement the logic in Home Assistant Core to simulate `move`/`stop` for lights that declare
-  `DYNAMIC_CONTROL_SIMULATED`.
-
-- **Files to Modify:**
-
-    - `homeassistant/components/light/__init__.py` (main light service handler)
-
-- **Logic to Implement:**
-
-    1. **Service Handler Logic:** In the `light.turn_on` service handler:
-
-        - If `dynamic_control` is present in `kwargs`:
-
-            - Check `light.supported_features`.
-
-            - If `LightEntityFeature.DYNAMIC_CONTROL` is _not_ present, but
-              `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` _is_ present:
-
-                - Initiate the simulation logic (as detailed in the previous "Engineering Execution Document" under
-                  Phase 3.3). This involves calculating steps and scheduling `async_call_later` calls
-                  back to the light entity with incremental `brightness_pct` (or color) values.
-
-                - Manage the `dynamic_state` attribute for the entity (e.g., `simulated_moving_brightness_up`).
-
-                - Implement cancellation logic for `type: "stop"`.
-
-    2. **Curve Integration (Initial):** For `move` operations, default to a `logarithmic` curve if `curve` is not
-       specified. Use a simple linear interpolation for now; full curve implementation can be a later PR.
-
-- **Testing:**
-
-    - **Integration Tests:** Test with a simple mock light integration that _only_ declares `DYNAMIC_CONTROL_SIMULATED`.
-      Verify `move`/`stop` works via simulation.
-
-    - **Manual Testing:** Test with an existing integration like WiZ or Tuya (after they declare `_SIMULATED` flags in a
-      later PR).
-
-#### **Part 3b: Home Assistant Integration Updates (Specific Platforms)**
-
-This section details the necessary changes for various lighting integrations to adopt the new `dynamic_control` API, either natively or by declaring simulated support
+This section details the necessary changes for various lighting integrations to adopt the new `dynamic_control` API natively where supported
 . Each of these would typically be a separate PR.
 
 ##### **PR ZHA.1: HA ZHA - Declare `DYNAMIC_CONTROL` & Map `dynamic_control` to Zigbee Commands**
@@ -439,7 +374,7 @@ This section details the necessary changes for various lighting integrations to 
 
     1. **Feature Declaration:** In `ZHALight` entity setup, if the Zigbee device's Level Control cluster supports `Move`
        and `Stop` commands, add `LightEntityFeature.DYNAMIC_CONTROL`. Always add
-       `LightEntityFeature.TRANSITION_SIMULATED` and `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` for dimmable
+        for dimmable
        lights as fallback.
 
     2. **Mapping `dynamic_control`:** In `ZHALight.async_turn_on`, translate `dynamic_control` parameters (`type: move`,
@@ -461,7 +396,7 @@ This section details the necessary changes for various lighting integrations to 
 
     1. **Feature Declaration:** In `ZWaveJsLight` entity setup, if the Z-Wave device's Multilevel Switch Command Class
        supports `Start Level Change` and `Stop Level Change`, add `LightEntityFeature.DYNAMIC_CONTROL`. Always
-       add `LightEntityFeature.TRANSITION_SIMULATED` and `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` as
+       add  as
        fallback.
 
     2. **Mapping `dynamic_control`:** In `ZWaveJsLight.async_turn_on`, translate `dynamic_control` parameters into
@@ -477,13 +412,11 @@ This section details the necessary changes for various lighting integrations to 
   commands.
 
 - **Files to Modify:** `homeassistant/components/mqtt/light.py`
-
 - **Logic to Implement:**
 
     1. **Feature Declaration:** When an `mqtt_light` entity is set up (via MQTT Discovery), inspect its exposed
        capabilities (e.g., `brightness_move`, `color_temp_move`). If supported, add
-       `LightEntityFeature.DYNAMIC_CONTROL`. Always declare `LightEntityFeature.TRANSITION_SIMULATED` and
-       `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` for all dimmable Z2M lights as fallback.
+       `LightEntityFeature.DYNAMIC_CONTROL`.
 
     2. **Mapping `dynamic_control`:** In `mqtt_light.async_turn_on`:
 
@@ -495,49 +428,12 @@ This section details the necessary changes for various lighting integrations to 
 
         - **`type: "step"`:** Publish `{"brightness_step": <step_size>}` or `{"color_temp_step": <step_size>}`.
 
-- **Testing:** Integration tests with Z2M instance and compatible Zigbee lights.
-
-##### **PR Z2M.2: HA MQTT Light - Report `dynamic_state` from Z2M Devices**
-
-- **Goal:** Allow Home Assistant to accurately reflect the `dynamic_state` of Z2M-connected lights.
-
-- **Files to Modify:** `homeassistant/components/mqtt/light.py`
-
-- **Logic to Implement:**
-
-    1. **Inferring `dynamic_state`:** When Home Assistant sends a `brightness_move` command, optimistically set
-       `dynamic_state` to `moving_brightness_up`/`down`. When a `brightness_move: 0` is sent, set to `idle`.
-
-    2. **Update Entity State:** Set the `_attr_dynamic_state` of the `mqtt_light` entity and trigger a state update.
-
-- **Testing:** Integration tests verifying `dynamic_state` changes.
-
-##### **PR Z2M.3: HA MQTT - Standardized `event_data` for Z2M Controllers**
-
-- **Goal:** Ensure Z2M-connected remotes and switches emit standardized `event` entities.
-
-- **Files to Modify:** `homeassistant/components/mqtt/device_trigger.py`
-
-- **Logic to Implement:**
-
-    1. **Event Entity Creation:** Ensure MQTT integration creates `event` entities for Z2M controllers.
-
-    2. **Standardized `event_data`:** Map Z2M's `action` or `click` properties from MQTT messages to our
-       `ControllerEventData` schema (e.g., `{"action": "single", "action_id": "button_1"}`).
-
-- **Testing:** Integration tests verifying standardized event data.
-
-##### **PR Tasmota.1 (Revised): HA Tasmota Light - Declare `LightEntityFeature.DYNAMIC_CONTROL` & Map `dynamic_control` to Tasmota MQTT Commands**
-
-- **Goal:** Leverage Tasmota's native `Dimmer >`, `Dimmer <`, and `Dimmer !` commands.
-
 - **Files to Modify:** `homeassistant/components/tasmota/light.py`
 
 - **Logic to Implement:**
 
     1. **Feature Declaration:** If the Tasmota device supports the `Dimmer` command, add
-       `LightEntityFeature.DYNAMIC_CONTROL`. Still declare `LightEntityFeature.TRANSITION_SIMULATED` and
-       `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` as fallback.
+       `LightEntityFeature.DYNAMIC_CONTROL`.
 
     2. **Mapping `dynamic_control`:** In `TasmotaLight.async_turn_on`:
 
@@ -549,69 +445,21 @@ This section details the necessary changes for various lighting integrations to 
 
         - **`type: "step"`:** Publish `Dimmer +{step_size}` or `Dimmer -{step_size}`.
 
-- **Testing:** Integration tests with Tasmota device.
-
-##### **PR Tasmota.2 (Unchanged): HA Tasmota Light - Report `dynamic_state` from Tasmota Devices**
-
-- **Goal:** Allow Home Assistant to accurately reflect the `dynamic_state` of Tasmota-connected lights.
-
-- **Files to Modify:** `homeassistant/components/tasmota/light.py`
-
-- **Logic to Implement:** Infer `dynamic_state` based on `Dimmer >`, `Dimmer <`, and `Dimmer !` commands sent, and
-  update the entity's `_attr_dynamic_state`.
-
-- **Testing:** Integration tests verifying `dynamic_state` changes.
-
-##### **PR Tasmota.3 (Unchanged): HA Tasmota - Standardized `event_data` for Tasmota Controllers**
-
-- **Goal:** Ensure Tasmota-based physical controls emit standardized `event` entities.
-
-- **Files to Modify:** `homeassistant/components/tasmota/device_trigger.py`
-
-- **Logic to Implement:** Map Tasmota's MQTT messages for button/encoder actions to `ControllerEventData` schema.
-
-- **Testing:** Integration tests verifying standardized event data.
-
-##### **PR Hue.1: HA Philips Hue Light - Declare `_SIMULATED` Flags**
-
-- **Goal:** Inform Home Assistant Core that Hue lights can be reliably simulated for dynamic control and transitions.
-
 - **Files to Modify:** `homeassistant/components/hue/light.py`
 
 - **Logic to Implement:**
 
-    1. **Feature Declaration:** Add `LightEntityFeature.TRANSITION_SIMULATED` and
-       `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` to `HueLight`'s `_attr_supported_features`. Do NOT add
-       `LightEntityFeature.DYNAMIC_CONTROL`.
+    1. **Feature Declaration:** Add `LightEntityFeature.DYNAMIC_CONTROL` to `HueLight`'s `_attr_supported_features`.
 
-- **Testing:** Integration tests verifying smooth simulation and halting.
-
-##### **PR Hue.2: HA Philips Hue - Standardized `event_data` for Hue Remotes**
-
-- **Goal:** Ensure Hue remotes emit standardized `event` entities.
-
-- **Files to Modify:** `homeassistant/components/hue/device_trigger.py`
-
-- **Logic to Implement:** Map `hue_event` data to our `ControllerEventData` schema (e.g., `{"action": "single",
-  "action_id": "button_1"}`).
-
-- **Testing:** Integration tests verifying standardized event data.
-
-##### **PR WiZ.1: HA WiZ Light - Declare `_SIMULATED` Flags**
-
-- **Goal:** Inform Home Assistant Core that WiZ lights _must_ be simulated for smooth dynamic control and transitions.
+- **Testing:** Integration tests verifying smooth dynamic control.
 
 - **Files to Modify:** `homeassistant/components/wiz/light.py`
 
 - **Logic to Implement:**
 
-    1. **Feature Declaration:** Add `LightEntityFeature.TRANSITION_SIMULATED` and
-       `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` to `WizLight`'s `_attr_supported_features`. Do NOT add
-       `LightEntityFeature.DYNAMIC_CONTROL`.
+    1. **Feature Declaration:** Add `LightEntityFeature.DYNAMIC_CONTROL` to `WizLight`'s `_attr_supported_features`.
 
-- **Testing:** Integration tests verifying smooth simulation and halting.
-
-##### **PR WiZ.2: (Optional) HA WiZ - Standardized `event_data` for any future WiZ controllers**
+- **Testing:** Integration tests verifying smooth dynamic control.
 
 - **Goal:** Prepare for any future WiZ-branded physical controllers that might expose events to Home Assistant.
 
@@ -641,4 +489,3 @@ This section details the necessary changes for various lighting integrations to 
 
 By following this detailed, step-by-step approach, a dedicated community member can make significant contributions to this exciting new functionality in Home Assistant and ESPHome
 . Good luck!
-````

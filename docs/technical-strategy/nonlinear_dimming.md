@@ -1,55 +1,51 @@
-# Nonlinear Dimming Strategy
+# Native Nonlinear Dimming Support
 
-Handling requests for nonlinear dimming profiles within Home Assistant's ZHA and Z-Wave JS integrations requires a
-nuanced approach, as neither Zigbee nor Z-Wave protocols typically offer native, standardized commands for applying
-arbitrary dimming curves dynamically during a `move` or `transition`.
+This document outlines the strategy for handling nonlinear dimming profiles in Home Assistant, focusing on native device capabilities and standard protocols.
 
-Instead, devices usually have a fixed internal dimming curve, or a configurable one through device-specific parameters.
-Therefore, the primary strategy will rely on Home Assistant Core's simulation capabilities, while also acknowledging any rare native configuration options.
+## Native Support Overview
 
-Here's how to coherently handle nonlinear dimming requests for ZHA and Z-Wave JS devices:
+Nonlinear dimming is supported through the following mechanisms:
 
-## 1. Home Assistant Core's `LightTransitionManager` as the Primary Curve Handler
+1. **Device-Specific Configuration**: Some advanced devices expose configuration parameters for adjusting their internal dimming curves.
+2. **Standard Protocol Support**: Some lighting protocols include native support for nonlinear dimming profiles.
 
-For most ZHA and Z-Wave JS lights, the `curve` parameter within the `dynamic_control` (or `transition`) service call
-will be interpreted and applied by the **Home Assistant Core's `LightTransitionManager`** (as described in **Phase 3, PR
-3.2 & 3.3** of the project plan).
+## Implementation Strategy
 
-- **Mechanism:** When a `light.turn_on` service call includes a `curve` (e.g., `logarithmic`, `s_curve`, or a custom
-  point list) in its `dynamic_control` or `transition` parameters, the `LightTransitionManager` will:
-  1. Determine the light's current brightness and the target brightness.
-  2. Calculate a series of intermediate brightness values **that follow the specified nonlinear curve** over the
-     requested `transition` duration or `dynamic_control` `ramp_time`/`speed`.
-  3. Send these **pre-calculated, incrementally stepped brightness commands** to the ZHA or Z-Wave JS integration at a
-     high frequency (e.g., every 50-100ms).
-- **Integration's Role:** The ZHA and Z-Wave JS integrations will simply receive these discrete, pre-curved brightness
-  `set` commands and pass them to the device. They will not need to interpret the `curve` parameter themselves, as the
-  curve application happens upstream in Home Assistant Core.
-- **Feature Flags:** For these integrations, the presence of `LightEntityFeature.TRANSITION_SIMULATED` and
-  `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` will signal to Home Assistant Core that it should perform this
-  software-based, curve-aware simulation if native protocol-level curve application is not available.
+### 1. Device-Specific Configuration
 
-### 2. Leveraging Device-Specific Configuration (If Applicable)
+Some Z-Wave and Zigbee devices allow configuration of their internal dimming curves through device parameters:
 
-While not a dynamic command, some advanced Z-Wave (and rarely Zigbee via quirks) devices might expose **configuration
-parameters** that allow adjusting their _internal_ dimming curve.
+- **Z-Wave**: Some devices expose configuration parameters for adjusting dimming curves
+- **Zigbee**: Certain devices may expose similar parameters through manufacturer-specific clusters
 
-- **Mechanism:** If such a parameter exists and is exposed by the Z-Wave JS (or ZHA quirk) integration, users could
-  configure the device's default dimming curve at the _device level_ through the Home Assistant UI's device settings.
-- **Interaction with `dynamic_control`:**
-    - If a device's internal curve is configured this way, and a `dynamic_control` command with a `curve` is then sent
-      from Home Assistant, the HA `LightTransitionManager`'s curve calculation would effectively be applied _on
-      top of_ or _in conjunction with_ the device's internal curve. This could lead to complex or unexpected
-      behavior, or simply the HA-imposed curve would override the perceived effect of the device's internal curve.
-    - **Recommendation:** Documentation should clearly state that for consistent and predictable behavior, it's
-      generally best to:
-        - **Either** rely solely on Home Assistant's software-based curve application (`dynamic_control` with `curve`)
-          and leave the device's internal curve (if configurable) at its default or a linear setting.
-        - **Or** configure the device's internal curve (if supported) and avoid specifying a `curve` in
-          `dynamic_control`, allowing the device to use its built-in nonlinear behavior.
-- **Implementation:** The Z-Wave JS and ZHA integrations would simply expose these device configuration parameters as
-  standard Home Assistant device configuration options, but would not dynamically interact with the `curve` parameter
-  of the `light.turn_on` service calls.
+These configurations are set once and affect all dimming operations on the device.
+
+### 2. Protocol-Level Support
+
+Standard protocols may include native support for nonlinear dimming:
+
+- **DALI**: Includes standardized logarithmic dimming curves
+- **Matter**: May include standardized dimming profiles in future versions
+
+When available, these native implementations provide the most reliable and performant solution.
+
+## Implementation Guidelines
+
+### 1. Device Configuration
+
+For devices that support configurable dimming curves:
+
+1. **Parameter Exposure**: The Z-Wave JS and ZHA integrations should expose relevant configuration parameters through the Home Assistant UI.
+2. **Documentation**: Each integration should document which devices support configurable dimming curves and how to access these settings.
+3. **Default Behavior**: Devices should use their default dimming curve if no specific configuration is provided.
+
+### 2. Service Call Behavior
+
+When handling service calls:
+
+- The `dynamic_control` service will only be available for devices that natively support it.
+- If a device does not support a requested feature (like a specific curve type), the service call will be ignored.
+- No simulation or fallback behavior will be implemented in the core or integrations.
 
 ### 3. State Reporting for Nonlinear Dimming
 
@@ -65,17 +61,71 @@ here.
 
 For nonlinear dimming profiles (`curve` parameter in `dynamic_control`):
 
-- **Primary Handling:** The `curve` will primarily be handled by the **Home Assistant Core's `LightTransitionManager`**.
-  This manager will calculate the intermediate brightness steps based on the specified curve and send these individual
-  steps as standard `set` commands to the ZHA/Z-Wave JS integration.
-- **Integration's Role:** ZHA and Z-Wave JS integrations will transparently pass these stepped brightness commands to
-  the underlying devices using `Level Control Set` (Zigbee) or `Multilevel Switch Set` (Z-Wave) commands, potentially
-  with a `transition_time`/`duration` for each small step to ensure further smoothness at the device level.
-- **Native Device Configuration (Limited):** If a specific device has configurable internal dimming curves via ZCL
-  attributes or Z-Wave configuration parameters, these would be exposed as _static device configuration options_
-  within Home Assistant, separate from the dynamic `light.turn_on` service calls.
-- **Consistent Experience:** This approach ensures that users get a consistent, curve-aware dimming experience
-  regardless of whether the underlying Zigbee or Z-Wave device natively understands complex curve commands.
+## Native Protocol Support
+
+### Zigbee (ZHA)
+
+Zigbee's Level Control cluster supports the following commands for native dimming control:
+
+- `Move to Level (with On/Off)`
+- `Move (with On/Off)`
+- `Step (with On/Off)`
+- `Stop`
+
+### Z-Wave
+
+Z-Wave's Multilevel Switch command class provides similar functionality:
+
+- `Start Level Change`
+- `Stop Level Change`
+- `Set`
+
+### DALI
+
+DALI includes standardized logarithmic dimming curves defined in IEC 62386-102.
+
+## Future Considerations
+
+As lighting protocols evolve, we expect to see:
+
+1. Broader native support for standardized dimming curves
+2. More devices with configurable dimming profiles
+3. Enhanced protocol support for dynamic dimming control
+
+## Standard Curve Definitions
+
+When implementing native support for dimming curves, the following standard curves should be considered:
+
+### DALI Logarithmic Curve
+
+DALI (IEC 62386-102) specifies a standardized logarithmic dimming curve that matches human perception of brightness. This curve is defined by the formula:
+
+```text
+Y = (e^(X * ln(256)) - 1) / 255
+```
+
+Where:
+
+- X is the input level (0.0 to 1.0)
+- Y is the output level (0.0 to 1.0)
+- e is the base of natural logarithms
+- ln is the natural logarithm
+
+### Other Standard Curves
+
+Other common dimming curves that may be supported by devices include:
+
+1. **Linear**: Direct 1:1 mapping of input to output
+2. **S-Curve**: Smooth acceleration and deceleration
+3. **Square Law**: Matches the non-linear response of human vision
+
+## Implementation Notes
+
+When implementing support for dimming curves:
+
+1. **Documentation**: Clearly document which curves are supported by each device/integration
+2. **Fallback Behavior**: If a requested curve is not supported, the service call should be ignored
+3. **Performance**: Native implementations should be optimized for smooth performance with minimal network traffic
 
 The integration of professional lighting control standards, particularly regarding nonlinear dimming curves, is a fantastic idea to elevate the user experience
 .
@@ -119,7 +169,7 @@ Here's how we can leverage these standards and practices in our work:
 ### How to Implement and Leverage These
 
 The core idea is to perform the curve transformation in the software layer (either in ESPHome or Home Assistant Core's
-simulation) before sending the final, raw brightness value to the device.
+native implementation) before sending the final, raw brightness value to the device.
 
 1. **Adopt DALI Logarithmic Curve as the Default "Perceptual" Curve:**
 
@@ -132,7 +182,7 @@ simulation) before sending the final, raw brightness value to the device.
      - **ESPHome (PR 1.1/1.2):** Within the `LightState`'s internal processing, transforming the target perceived
        brightness (0-100%) to the raw output value (0-255 PWM duty cycle, etc.) using the logarithmic curve. This
        applies to native ESPHome transitions and dynamic control.
-     - **Home Assistant Core `LightTransitionManager` (PR 3.2/3.3):** When simulating transitions or dynamic control,
+     - **Home Assistant Core `LightTransitionManager` (PR 3.2/3.3):** When handling transitions or dynamic control,
        this manager would calculate the intermediate steps, applying the selected `curve` (defaulting to
        logarithmic) to convert perceived brightness levels to linear device brightness values before sending them
        to the integration.

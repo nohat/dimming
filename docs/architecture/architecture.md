@@ -11,12 +11,7 @@ priority: essential
 
 ### Executive Summary
 
-This proposal outlines a plan to fundamentally enhance Home Assistant's lighting control, creating a unified system for smooth, intuitive dimming—like turning a physical dimmer knob
-.
-It directly addresses long-standing user frustrations with choppy or unresponsive lights and introduces a "conductor" (a new core component) to orchestrate seamless brightness and color changes across all smart lights, regardless of brand or protocol
-.
-By leveraging native device capabilities and providing optimized simulation for unsupported devices, we aim to empower users with intuitive control while significantly improving performance and reliability
-. The initial focus will be on core "Move"/"Stop" functionality, with further enhancements planned incrementally.
+This proposal outlines a plan to fundamentally enhance Home Assistant's lighting control, creating a unified system for smooth, intuitive dimming—like turning a physical dimmer knob. It directly addresses long-standing user frustrations with choppy or unresponsive lights and introduces a "conductor" (a new core component) to orchestrate seamless brightness and color changes across all smart lights, regardless of brand or protocol. By leveraging native device capabilities and providing optimized simulation for unsupported devices, we aim to empower users with intuitive control while significantly improving performance and reliability. The initial focus will be on core "Move"/"Stop" functionality, with further enhancements planned incrementally.
 
 ### Introduction
 
@@ -156,7 +151,7 @@ While Home Assistant excels at integrating a vast array of lighting hardware, th
 
        - **Z-Wave:** The [Z-Wave Application Command Class Specification (Footnote 2)](https://www.silabs.com/documents/login/miscellaneous/SDS13781-Z-Wave-Application-Command-Class-Specification.pdf "null") includes "Start Level Change Command" and "Stop Level Change Command." While Z-Wave JS allows low-level access to these commands ([ZwaveJS Start Level Change command](https://community.home-assistant.io/t/zwavejs-start-level-change-command/618410/4 "null")), they are not seamlessly integrated into the high-level `light.turn_on` service.
 
-       - **Tasmota & ESPHome:** Firmware like Tasmota offers direct `Dimmer >/<` and `Dimmer !` commands for continuous dimming and stopping ([Tasmota Commands - Dimmer > / \< / !](https://www.google.com/search?q=https://tasmota.github.io/docs/Commands/%23dimmer "null")). Similarly, ESPHome can be extended with native `move`/`stop` logic. Currently, Home Assistant's integrations for these platforms do not fully leverage these native capabilities in a standardized way.
+       - **Tasmota & ESPHome:** Firmware like Tasmota offers direct `Dimmer >/<` and `Dimmer !` commands for continuous dimming and stopping ([Tasmota Commands - Dimmer > / \< / !](https://www.google.com/search?q=https://tasmota.github.io/commands/%23dimmer "null")). Similarly, ESPHome can be extended with native `move`/`stop` logic. Currently, Home Assistant's integrations for these platforms do not fully leverage these native capabilities in a standardized way.
 
      - **Inconsistent Manufacturer API Exposure:** While some manufacturer APIs (e.g., [Insteon API (Footnote 3)](https://insteon.docs.apiary.io/#reference/commands/commands-collection "null"), [Hue Lights API (Footnote 4)](https://developers.meethue.com/develop/hue-api/lights-api/#set-light-state "null"), [Yeelight WiFi Light Inter-Operation Specification (Footnote 5)](https://www.google.com/search?q=https://www.yeelight.com/download/Yeelight_Inter-Operation_Spec.2019-12-16.pdf "null")) support continuous control or explicit stop commands, others (like Tuya or Lifx) do not. Home Assistant lacks a unified layer to abstract these differences.
 
@@ -169,22 +164,21 @@ While Home Assistant excels at integrating a vast array of lighting hardware, th
 
 ### The Vision: Seamless, Intuitive, and Performant Lighting
 
-This proposal aligns with Home Assistant’s mission to provide a device-agnostic, local-first platform by standardizing dynamic lighting control across diverse protocols (Zigbee, Z-Wave, Matter, etc.)
-.
-By leveraging native device capabilities and providing optimized simulation for unsupported devices, we empower users with intuitive control while maintaining compatibility and performance.
+This proposal aligns with Home Assistant's mission to provide a device-agnostic, local-first platform by standardizing dynamic lighting control across diverse protocols (Zigbee, Z-Wave, Matter, etc.).
 
-Our North Star is to make dynamic light control in Home Assistant feel as intuitive and responsive as a traditional high-quality dimmer switch, regardless of the underlying hardware
-. This means:
+By leveraging native device capabilities, we empower users with intuitive control while maintaining compatibility and performance. When a device does not support a particular dynamic control feature, the service call will be gracefully ignored, similar to how unsupported `transition` parameters are handled today.
 
-- **"Hold-to-dim, release-to-stop" as a First-Class Experience:** Direct, immediate, and smooth continuous dimming and
-  color adjustment.
+Our North Star is to make dynamic light control in Home Assistant feel as intuitive and responsive as a traditional high-quality dimmer switch, using only the native capabilities of each device. This means:
 
-- **Consistent Behavior:** Lights should respond predictably and smoothly across all integrations.
+- **"Hold-to-dim, release-to-stop" as a Native Experience:** Direct, immediate, and smooth continuous dimming and
+  color adjustment on devices that support it natively.
 
-- **Perceptually Uniform Changes:** Light changes should appear fluid and natural to the human eye, with appropriate
+- **Graceful Degradation:** Service calls for unsupported features are ignored, ensuring reliable operation across all devices.
+
+- **Perceptually Uniform Changes:** Where supported, light changes should appear fluid and natural to the human eye, with appropriate
   dimming curves applied.
 
-- **Optimal Performance:** Minimal latency and network load, leveraging native device capabilities wherever possible.
+- **Optimal Performance:** Minimal latency and network load by using native device capabilities exclusively.
 
 ### Proposed Architectural Strategy
 
@@ -215,23 +209,11 @@ To achieve this vision, I propose the following architectural changes:
 
     - Introduce `LightEntityFeature.DYNAMIC_CONTROL` to indicate that an integration/device natively supports continuous `move`/`stop` commands.
 
-    - Introduce `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` and `LightEntityFeature.TRANSITION_SIMULATED` to inform Home Assistant Core that it can reliably _simulate_ these dynamic behaviors for the entity.
-
 3. **Centralized `LightTransitionManager` in Home Assistant Core:**
 
-    - Implement a new core component, the `LightTransitionManager`, which acts like a conductor, directing lights to dim smoothly. It will be responsible for orchestrating all dynamic light operations.
+    - Implement a new core component, the `LightTransitionManager`, which orchestrates all dynamic light operations by translating high-level `dynamic_control` service calls into the appropriate native protocol commands.
 
-    - For lights declaring `LightEntityFeature.DYNAMIC_CONTROL`, the manager will translate the `dynamic_control` service call into the appropriate native protocol command (e.g., Zigbee `Move`, Z-Wave `Start Level Change`, Tasmota `Dimmer >`, ESPHome's new native `move` command).
-
-    - For lights declaring `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` (but not `DYNAMIC_CONTROL`), the manager will perform **high-performance, event-driven software simulation**. This simulation will:
-
-        - Calculate incremental brightness/color steps based on the desired `speed` and `curve`.
-
-        - Schedule `async_call_later` (or similar efficient scheduling) to send these incremental updates to the light entity's `async_turn_on` method.
-
-        - Crucially, this simulation will _not_ rely on brittle Home Assistant-side `while` loops, ensuring responsiveness and minimizing network spam. It smartly sends small, efficient updates—like a metronome keeping a steady rhythm—without overloading your network.
-
-    - The manager will also handle the `transition` parameter, either passing it natively or simulating it for entities declaring `LightEntityFeature.1TRANSITION_SIMULATED`.
+    - For lights declaring `LightEntityFeature.DYNAMIC_CONTROL`, the manager will use the most efficient native protocol command available (e.g., Zigbee `Move`, Z-Wave `Start Level Change`, Tasmota `Dimmer >`, ESPHome's native `move`).
 
     - **Flow Diagram (Conceptual):**
 
@@ -242,16 +224,14 @@ To achieve this vision, I propose the following architectural changes:
 
             subgraph LightTransitionManager Logic
                 C -- If DYNAMIC_CONTROL --> D[Translate to Native Protocol Command]
-                D --> E[Send single efficient command to Integration]
-                C -- Else If DYNAMIC_CONTROL_SIMULATED --> F[Perform Optimized Simulation (calculate steps, async_call_later)]
-                F --> G[Send small, efficient incremental updates to Integration's async_turn_on]
+                D --> E[Send command to Integration]
             end
 
             E --> H[Light Entity (Integration Layer)]
-            G --> H
-
             H --> I[Physical Light Device]
         ```
+
+    - **Fallback Support:** For devices without native support, a standardized fallback mechanism is available. See [Simulated Dimming Documentation](./technical-strategy/simulated_dimming.md) for details on the fallback implementation.
 
 4. **Unified `dynamic_state` Attribute:**
 
@@ -283,8 +263,6 @@ The initial implementation will prioritize the core `dynamic_control` parameter 
 
 ### Backward Compatibility and Migration
 
-- **Existing Integrations:** Integrations not updated to support `LightEntityFeature.DYNAMIC_CONTROL` or `DYNAMIC_CONTROL_SIMULATED` will continue using existing `light.turn_on`/`brightness_increase`/`decrease` services, ensuring no disruption for current users.
-
 - **Migration Path:** Integration maintainers will be provided with clear guidelines to adopt `dynamic_control` and `dynamic_state` (e.g., via a developer guide in the Home Assistant documentation). The `LightTransitionManager` will gracefully handle devices without native support by falling back to optimized simulated transitions, preserving functionality.
 
 - **Deprecation Plan:** Home Assistant-side `while` loops for dimming will be marked as deprecated in documentation, with a transition period (e.g., 12 months) before encouraging users to adopt the new `dynamic_control` parameter.
@@ -294,8 +272,6 @@ The initial implementation will prioritize the core `dynamic_control` parameter 
 - **Complexity of LightTransitionManager:** While adding a new core component increases complexity, it consolidates dimming logic, reducing duplicated code across integrations. User demand for smooth dimming (e.g., community threads on “hold-to-dim”) justifies this trade-off.
 
 - **Integration Maintenance:** To minimize burden, we’ll provide templates and documentation for adopting `LightEntityFeature.DYNAMIC_CONTROL` and `dynamic_control` mappings, targeting key integrations (ZHA, Z-Wave JS, Tasmota, ESPHome) in the initial phase.
-
-- **Unsupported Devices:** Wi-Fi lights (e.g., LIFX) lacking native `Move`/`Stop` will use the `DYNAMIC_CONTROL_SIMULATED` flag, ensuring seamless fallback to optimized, event-driven updates without requiring integration changes.
 
 ### Testing and Validation Plan
 
