@@ -159,17 +159,17 @@ This document catalogs community discussions that highlight the need for improve
 ## Key Themes
 
 1. **User Frustration:** Complexity and unreliability of automation-based solutions
-1. **Professional Impact:** Installers considering abandoning Home Assistant
-1. **Protocol Capability Gap:** Native protocol support exists but isn't exposed through standard services
-1. **Workaround Limitations:** Network flooding, complexity, and poor user experience
-1. **Universal Need:** Desire for consistent behavior across all light types and protocols
+2. **Professional Impact:** Installers considering abandoning Home Assistant
+3. **Protocol Capability Gap:** Native protocol support exists but isn't exposed through standard services
+4. **Workaround Limitations:** Network flooding, complexity, and poor user experience
+5. **Universal Need:** Desire for consistent behavior across all light types and protocols
 
 ## Community Needs Summary
 
 The community clearly articulates need for:
 
 1. **Universal Transition Handling:** Consistent fading for all lights, regardless of native support
-1. **Universal Continuous Control:** Standardized move/stop commands for intuitive hold-to-dim experiences
-1. **Advanced Control:** Configurable transition curves and speeds
-1. **State Feedback:** Real-time reporting of transition/motion states
-1. **Protocol Abstraction:** Single interface that works across Zigbee, Z-Wave, Matter, and WiFi devices
+2. **Universal Continuous Control:** Standardized move/stop commands for intuitive hold-to-dim experiences
+3. **Advanced Control:** Configurable transition curves and speeds
+4. **State Feedback:** Real-time reporting of transition/motion states
+5. **Protocol Abstraction:** Single interface that works across Zigbee, Z-Wave, Matter, and WiFi devices

@@ -115,11 +115,11 @@ ______________________________________________________________________
    - `LightEntityFeature.DYNAMIC_CONTROL`: Device natively handles `dynamic_control` (move/stop).
    - `LightEntityFeature.TRANSITION_SIMULATED`: Integration can _simulate_ `transition` if not native.
    - `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED`: Integration can _simulate_ `dynamic_control` if not native.
-1. **Core Orchestration:** Home Assistant's `light` domain (`__init__.py`) acts as the central orchestrator:
+2. **Core Orchestration:** Home Assistant's `light` domain (`__init__.py`) acts as the central orchestrator:
    - When `light.turn_on` is called with `transition` or `dynamic_control`:
      - It first checks if the target `LightEntity` supports the feature _natively_. If yes, it just passes the command.
      - If not native, it checks if the entity supports the _simulated_ version of the feature. If yes, the Home Assistant core takes over and executes the simulation (sending rapid commands).
      - If neither is supported, the parameter is effectively ignored (current behavior), or a warning/error could be logged.
-1. **State Reporting:** Whether native or simulated, the `LightEntity`'s `dynamic_state` attribute (as per ESPHome PR6/HA PR8) should accurately reflect the light's current activity, providing consistent feedback to the UI and automations.
+3. **State Reporting:** Whether native or simulated, the `LightEntity`'s `dynamic_state` attribute (as per ESPHome PR6/HA PR8) should accurately reflect the light's current activity, providing consistent feedback to the UI and automations.
 
 This layered approach ensures that Home Assistant provides the best possible experience for every light, leveraging native capabilities when available and intelligently simulating them when not, leading to a much more consistent and powerful lighting control system.

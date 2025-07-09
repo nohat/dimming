@@ -147,8 +147,8 @@ The fundamental change would occur within Home Assistant Core itself, specifical
 1. **Define New Service Calls:** New service calls, such as `light.start_dimming` and `light.stop_dimming`, would need to be introduced.
    - `light.start_dimming`: This service would likely accept parameters like `entity_id` (the light to control), `direction` (e.g., 'up' or 'down'), and an optional `rate` (e.g., percentage per second or steps per second).
    - `light.stop_dimming`: This service would simply take `entity_id` to halt any ongoing continuous dimming.
-1. **Update `LightEntity` Base Class:** The `LightEntity` base class would need to be extended with abstract methods (or default implementations) for `async_start_dimming` and `async_stop_dimming`. This would provide a standardized interface for all light integrations to implement this new functionality.
-1. **Service Schema Definition:** The YAML schema for these new services would need to be defined, allowing users to call them via automations, scripts, and the developer tools.
+2. **Update `LightEntity` Base Class:** The `LightEntity` base class would need to be extended with abstract methods (or default implementations) for `async_start_dimming` and `async_stop_dimming`. This would provide a standardized interface for all light integrations to implement this new functionality.
+3. **Service Schema Definition:** The YAML schema for these new services would need to be defined, allowing users to call them via automations, scripts, and the developer tools.
 
 This core change would enable a more efficient approach to continuous dimming, especially for light groups, as a single "adjust" message could be sent to a group rather than individual messages to each light.\[1\]
 
@@ -163,13 +163,13 @@ The official Home Assistant Tuya integration primarily communicates with devices
    - **Intelligent Duration Calculation:** The integration calculates appropriate transition durations based on current brightness, target brightness, and desired dimming rate, ensuring consistent user experiences
    - **`async_stop_dimming` Implementation:** Uses mathematical interpolation to calculate the current brightness position within an active transition and immediately sets that value, effectively "freezing" the dimming at the current level
 
-1. **Multi-Strategy Approach:**
+2. **Multi-Strategy Approach:**
 
    - **Primary Strategy:** scene_data_v2 long transitions for smooth, hardware-accelerated dimming
    - **Fallback Strategy:** Intelligent incremental updates with rate limiting compliance (200 DP reports per 60 seconds) as detailed in Section VI.B.3
    - **Rate Limiting Management:** Advanced algorithms to optimize update frequency while respecting Tuya Cloud API limits, including adaptive update intervals and update windows
 
-1. **Enhanced Cloud API Capabilities:**
+3. **Enhanced Cloud API Capabilities:**
 
    - **Raw DP Command Potential:** If Tuya exposes low-level serial commands (0x03, 0x05, 0x07) via "Raw type" Data Points through their cloud API, the official integration could leverage direct hardware commands for optimal dimming performance
    - **Future API Extensions:** The implementation framework supports potential future Tuya Cloud API enhancements that might expose direct "start/stop" commands, providing upgrade paths without breaking existing functionality
@@ -190,7 +190,7 @@ Unofficial integrations, such as Local Tuya and Zigbee2MQTT, often offer more di
    - **Configuration Enhancement:** Users can configure advanced dimming parameters including transition curves, update rates, and fallback methods within Local Tuya's device configuration interface
    - **`tuyapi` Library Extensions:** Libraries like `tuyapi` would be enhanced to support the new scene_data_v2 payloads and advanced serial command construction \[15, 16\]
 
-1. **Zigbee2MQTT (for Tuya Zigbee Devices):**
+2. **Zigbee2MQTT (for Tuya Zigbee Devices):**
 
    - This represents the most promising path for native continuous dimming. Zigbee2MQTT acts as a bridge, translating Zigbee device commands to MQTT messages for Home Assistant.\[17, 18\]
    - **Multi-Protocol Support:** As detailed in Section VI.B.2, Zigbee2MQTT can support continuous dimming through multiple mechanisms:

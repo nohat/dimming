@@ -43,7 +43,7 @@ The core work remains in `homeassistant/components/tasmota/light.py`, but the ma
      - In the `TasmotaLight` entity's setup:
        - If the Tasmota device supports the `Dimmer` command (which implies support for `Dimmer >`, `<` and `!`), **unconditionally add `LightEntityFeature.DYNAMIC_CONTROL`** to its `_attr_supported_features`. This is a strong native capability.
        - Still declare `LightEntityFeature.TRANSITION_SIMULATED` and `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` as a fallback, especially for `transition` (due to `Fade` unreliability) or if the specific Tasmota firmware version or `SetOption` doesn't fully expose `Dimmer >` / `<` behavior as expected.
-  1. **Mapping `dynamic_control` to MQTT Payloads:**
+  2. **Mapping `dynamic_control` to MQTT Payloads:**
      - Modify the `async_turn_on` method in `TasmotaLight`.
      - If `dynamic_control` is present in `kwargs` and `LightEntityFeature.DYNAMIC_CONTROL` is supported:
        - **`type: "move"`:**
@@ -115,7 +115,7 @@ This would fit into **Phase 3b: Integration-Specific Updates** of our overall pl
      - In the `TasmotaLight` entity's setup:
        - If the Tasmota device is a dimmable light and supports the `Dimmer` command, add `LightEntityFeature.DYNAMIC_CONTROL` to its `_attr_supported_features`. We might need to check for specific Tasmota `SetOption` values (like `SetOption114`) or infer from the device's advertised capabilities.
        - Always declare `LightEntityFeature.TRANSITION_SIMULATED` and `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` for all dimmable Tasmota lights. This is crucial for fallback, given the varying reliability of Tasmota's `Fade` and the possibility that a user hasn't configured `Dimmer +`/`-` behavior.
-  1. **Mapping `dynamic_control` to MQTT Payloads:**
+  2. **Mapping `dynamic_control` to MQTT Payloads:**
      - Modify the `async_turn_on` method in `TasmotaLight`.
      - If `dynamic_control` is present in `kwargs` and `LightEntityFeature.DYNAMIC_CONTROL` is supported:
        - **`type: "move"`:**
@@ -143,11 +143,11 @@ This would fit into **Phase 3b: Integration-Specific Updates** of our overall pl
     - `homeassistant/components/tasmota/light.py`
 - **Logic to Implement:**
   1. **State Consumption:** The `tasmota_light` integration needs to listen for state updates from Tasmota's `stat` topic (e.g., `stat/tasmota_device/RESULT` or `stat/tasmota_device/POWER`).
-  1. **Inferring `dynamic_state`:**
+  2. **Inferring `dynamic_state`:**
      - When Home Assistant sends a `Dimmer +`/`-` command, the `tasmota_light` entity should optimistically set its `dynamic_state` to `moving_brightness_up`/`down`.
      - When a `Dimmer !` command is sent, set it to `idle`.
      - If the light's `POWER` or `Dimmer` state changes rapidly over a short period (indicating an ongoing transition or dimming), the integration could infer `transitioning` or `moving_brightness_up`/`down` if no explicit `dynamic_control` command was just sent by HA.
-  1. **Update Entity State:** Set the `_attr_dynamic_state` of the `tasmota_light` entity and trigger a state update.
+  3. **Update Entity State:** Set the `_attr_dynamic_state` of the `tasmota_light` entity and trigger a state update.
 - **Testing:**
     - **Integration Tests:** Verify `dynamic_state` changes correctly in Home Assistant's Developer Tools -> States when controlling Tasmota lights via `dynamic_control` service calls or physical controls (if Tasmota is configured to report them).
 
@@ -158,7 +158,7 @@ This would fit into **Phase 3b: Integration-Specific Updates** of our overall pl
     - `homeassistant/components/tasmota/device_trigger.py` (or similar for MQTT Event entities)
 - **Logic to Implement:**
   1. **Event Entity Creation:** If a Tasmota device is configured with `Button` or `Encoder` components and sends MQTT messages for these, the MQTT integration (which Tasmota builds upon) should create an `event` entity (e.g., `event.my_tasmota_button_action`).
-  1. **Standardized `event_data`:** The `event_data` attribute of these `event` entities should conform to our `ControllerEventData` schema (e.g., `{"action": "single", "action_id": "button_1"}` or `{"action": "rotate_left", "value": 5.0}`). Tasmota's `ButtonTopic` and `SwitchTopic` configurations are highly flexible, so this might involve recommending specific Tasmota configurations in documentation to ensure the MQTT payload is easily parsable into our standard `event_data`.
+  2. **Standardized `event_data`:** The `event_data` attribute of these `event` entities should conform to our `ControllerEventData` schema (e.g., `{"action": "single", "action_id": "button_1"}` or `{"action": "rotate_left", "value": 5.0}`). Tasmota's `ButtonTopic` and `SwitchTopic` configurations are highly flexible, so this might involve recommending specific Tasmota configurations in documentation to ensure the MQTT payload is easily parsable into our standard `event_data`.
 - **Testing:**
     - **Integration Tests:** Pair a Tasmota device configured as a button or rotary encoder. Trigger various actions. Verify that the corresponding `event` entity in Home Assistant fires with the correct, standardized `event_data`.
 

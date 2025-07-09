@@ -41,19 +41,19 @@ Here's what Home Assistant's `LightEntity` could benefit from:
      - `moving_color` (for continuous hue/saturation changes)
    - **Benefit:** Automations could _trigger_ or _condition_ on `transition_state`. E.g., "if light is `moving_brightness_up`, then disable motion sensor dimming."
 
-1. **`transition_target_brightness` / `transition_target_color` (New Attributes):**
+2. **`transition_target_brightness` / `transition_target_color` (New Attributes):**
 
    - **Purpose:** If a transition is active, what is the intended final brightness/color?
    - **Values:** Same format as `brightness` (0-255) or color attributes.
    - **Benefit:** The UI could show "50% (-> 80%)" indicating current and target. Automations could use this to make smart decisions.
 
-1. **`transition_progress` (New Attribute, Optional):**
+3. **`transition_progress` (New Attribute, Optional):**
 
    - **Purpose:** A percentage (0-100%) indicating how far along an ongoing transition is.
    - **Values:** Float from 0.0 to 100.0.
    - **Benefit:** For advanced UI elements or visualizers, or for debugging. Less critical for automations but useful.
 
-1. **`transition_mode` (New Attribute, Optional):**
+4. **`transition_mode` (New Attribute, Optional):**
 
    - **Purpose:** If a `light.move_brightness` (or similar) command is active, what are the parameters of that move?
    - **Values:** A dictionary that might contain:
@@ -64,7 +64,7 @@ Here's what Home Assistant's `LightEntity` could benefit from:
      - `ramp_time: 0.5`
    - **Benefit:** Provides full context about the current dynamic operation. This is likely more for diagnostic or advanced display than common automation logic.
 
-1. **`dimming_curve` / `min_output` / `max_output` (New Configuration/Attribute, per light):**
+5. **`dimming_curve` / `min_output` / `max_output` (New Configuration/Attribute, per light):**
 
    - **Purpose:** These are properties of the light _itself_ (or its current operating mode). They define how it behaves.
    - **Location:** Ideally, these would be configurable via `customize:` or a light's device settings, and then exposed as read-only state attributes.
@@ -74,19 +74,19 @@ Here's what Home Assistant's `LightEntity` could benefit from:
 
 1. **ESPHome Firmware:** The ESPHome `light` component would become the primary intelligence for managing the "move/stop" logic. It would actively calculate the current brightness based on the received `move` command, curve, speed, and ramp time. It would then _report_ these dynamic `brightness` values back to Home Assistant in real-time. Crucially, when a `move` command is active, ESPHome would also need to report the new `transition_state` and `transition_target_brightness` (if applicable) to Home Assistant.
 
-1. **Home Assistant Integrations (e.g., ESPHome via Native API, MQTT, ZHA, Matter):**
+2. **Home Assistant Integrations (e.g., ESPHome via Native API, MQTT, ZHA, Matter):**
 
    - These integrations would be responsible for translating the incoming messages from the physical device (ESPHome) or the protocol (Zigbee, Matter) into Home Assistant's internal `LightEntity` state attributes.
    - For `light.move_brightness` service calls originating _from_ Home Assistant, the integration would pass these complex parameters down to the device (ESPHome) or protocol (Zigbee/Matter cluster command).
    - They would update `transition_state`, `transition_target_brightness`, etc., based on what the device is _doing_ or what command was just sent.
 
-1. **Home Assistant Core `LightEntity`:**
+3. **Home Assistant Core `LightEntity`:**
 
    - The base `LightEntity` class would be extended to include these new attribute properties.
    - It would have methods for integrations to update these properties.
    - It would be responsible for dispatching state change events when these new attributes change, allowing automations and frontend components to react.
 
-1. **Home Assistant Frontend:**
+4. **Home Assistant Frontend:**
 
    - UI elements (e.g., light cards, developer tools) could then visually represent "Light is dimming up (target 80%)" instead of just showing the current brightness bouncing around.
    - More advanced control panels could surface the `transition_mode` details, `min_output`, `max_output`, and allow selection of `curve` profiles.
@@ -106,9 +106,9 @@ This is where the concept of "control hierarchy" or "arbitration" becomes crucia
 ### Principles of the Hierarchy
 
 1. **Device-Local Priority for Dynamic Control:** The device itself (e.g., ESPHome) should have the highest priority for managing _ongoing, dynamic_ changes like "move/stop" operations triggered by a physical button on the device. This ensures the best responsiveness and avoids network latency issues.
-1. **Home Assistant as the Orchestrator/State Reporter:** Home Assistant acts as the central brain, issuing high-level commands, receiving state updates, and providing a unified abstraction layer for the user and automations. It becomes the "source of truth" for the current _observed_ state, but not necessarily the _executor_ of every micro-step of a transition.
-1. **Fallback for Less Capable Devices:** If a device (or its integration) doesn't support the advanced dynamic commands, Home Assistant should gracefully fall back to its existing methods (e.g., rapid-fire `turn_on` commands with small increments).
-1. **Clear Precedence Rules:** Define how new commands override or interact with ongoing operations.
+2. **Home Assistant as the Orchestrator/State Reporter:** Home Assistant acts as the central brain, issuing high-level commands, receiving state updates, and providing a unified abstraction layer for the user and automations. It becomes the "source of truth" for the current _observed_ state, but not necessarily the _executor_ of every micro-step of a transition.
+3. **Fallback for Less Capable Devices:** If a device (or its integration) doesn't support the advanced dynamic commands, Home Assistant should gracefully fall back to its existing methods (e.g., rapid-fire `turn_on` commands with small increments).
+4. **Clear Precedence Rules:** Define how new commands override or interact with ongoing operations.
 
 ### Proposed Layered System Architecture
 
@@ -156,16 +156,16 @@ This is where the concept of "control hierarchy" or "arbitration" becomes crucia
 1. **"Source of Truth" Delegation:**
    - **Device as Source for _Instantaneous Output_**: The ESPHome device is the definitive source for its _current_ light output (brightness/color). It pushes these updates.
    - **HA as Source for _Desired State/Command Intent_**: Home Assistant is the definitive source for _what command was last sent_ and _what the overall system intends_ for the light. This is reflected in the new `transition_target` and `transition_mode` attributes.
-1. **Clear Override/Precedence Rules:**
+2. **Clear Override/Precedence Rules:**
    - **Command Takes Precedence:** Any new command (from HA or a local button) _interrupts_ and _overrides_ an ongoing dynamic operation. A `light.turn_on` to a fixed brightness stops a `move_brightness` and transitions to the new fixed value. A `light.adjust_brightness.stop` stops any ongoing `move`.
    - **Local Control Overrides Remote During Active Hold:** If a user is physically holding a button on the device to dim, the device should prioritize that input locally for maximum responsiveness. If an HA command comes in _while the button is held_, the device needs to decide:
      - Option A (Simpler): The HA command immediately takes over, and the local button's effect is overridden for the duration of the HA command. When the HA command finishes, and the button is still held, the local move resumes.
      - Option B (More Complex but Better UX): The HA command momentarily takes over. If the button is _still held_ after the HA command, the local control _re-asserts_ its `move` command, potentially to continue from the new brightness level. This requires careful state tracking on the device.
      - **Recommendation:** Option A is simpler to implement initially. For Option B, the HA command would be treated as a temporary "override" that sets a new base from which the local "move" could continue.
-1. **Heartbeat/Watchdog:** Home Assistant integrations can implement a simple "heartbeat" or "watchdog" for devices that are _expected_ to report `transition_state`. If a device is commanded into a `moving_brightness_up` state but stops reporting updates, HA can flag it as unresponsive or revert its own internal state model.
-1. **Error Handling & Fallbacks:**
+3. **Heartbeat/Watchdog:** Home Assistant integrations can implement a simple "heartbeat" or "watchdog" for devices that are _expected_ to report `transition_state`. If a device is commanded into a `moving_brightness_up` state but stops reporting updates, HA can flag it as unresponsive or revert its own internal state model.
+4. **Error Handling & Fallbacks:**
    - If a device reports an `transition_state` that Home Assistant doesn't understand, it can log a warning and default to the `brightness` value.
    - If a `light.adjust_brightness` command is sent to a device that doesn't support it, the integration attempts the best-effort simulation (rapid `turn_on`s). Home Assistant's state would reflect the simulated transition.
-1. **Documentation:** Clear documentation for users and developers on how this hierarchy works, which commands take precedence, and what to expect from state attributes during dynamic operations is paramount.
+5. **Documentation:** Clear documentation for users and developers on how this hierarchy works, which commands take precedence, and what to expect from state attributes during dynamic operations is paramount.
 
 This layered approach ensures that the most capable devices (like advanced ESPHome firmware) can deliver the best, most responsive user experience with local control, while the entire ecosystem benefits from standardized command structures and rich state representation in Home Assistant. Less capable devices can still participate, albeit with a slightly less seamless (but still functional) experience, creating a robust and adaptable smart home platform.

@@ -62,7 +62,7 @@ While Home Assistant excels at integrating a vast array of lighting hardware, th
 
        - **Relevance:** This discussion delves into the technical reasons for non-linear dimming (human eye perception, luminaire characteristics) and provides a spreadsheet for calculating perceived brightness. This highlights the technical understanding and user desire for perceptually correct dimming that is not natively handled by HA.
 
-1. **Underlying Technical Challenges & Inefficiencies:**
+2. **Underlying Technical Challenges & Inefficiencies:**
 
    - **Over-reliance on Brittle, Performance-Degrading Workarounds:** To achieve continuous dimming or smoother transitions, users and even Home Assistant itself resort to rapid, iterative commands (e.g., `while` loops). This approach introduces significant technical debt and leads to:
 

@@ -25,10 +25,10 @@ This creates a significant barrier to achieving intuitive lighting control that 
 ### Core Architecture Principles
 
 1. **Leverage Existing Constructs**: Build upon Home Assistant's existing Event entities rather than creating new event systems
-1. **Declarative Configuration**: Enable simple, declarative mapping between control actions and light behaviors
-1. **Protocol Abstraction**: Abstract away protocol differences through standardized interfaces
-1. **Progressive Enhancement**: Support both software simulation and native hardware acceleration
-1. **Backward Compatibility**: Maintain compatibility with existing automation systems
+2. **Declarative Configuration**: Enable simple, declarative mapping between control actions and light behaviors
+3. **Protocol Abstraction**: Abstract away protocol differences through standardized interfaces
+4. **Progressive Enhancement**: Support both software simulation and native hardware acceleration
+5. **Backward Compatibility**: Maintain compatibility with existing automation systems
 
 ### Implementation Phases
 

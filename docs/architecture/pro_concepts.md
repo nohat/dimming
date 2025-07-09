@@ -17,7 +17,7 @@ The key insight from professional lighting is that brightness (intensity) isn't 
      - **Custom Curves:** Allowing users to define their own points or select from a library of pre-defined curves (e.g., "incandescent emulation," "cinema fade").
    - **Application:** Crucial for smooth dim-to-black, preventing flicker at low levels, and ensuring a natural feel.
 
-1. **Rate/Speed Modifiers:**
+2. **Rate/Speed Modifiers:**
 
    - **Concept:** How quickly a change occurs. Beyond a fixed `transition_length`.
    - **Granular Control:**
@@ -25,16 +25,16 @@ The key insight from professional lighting is that brightness (intensity) isn't 
      - `acceleration`/`deceleration` (Ramp Time / Attack/Decay): How quickly the rate itself changes. A smooth acceleration from a stop to full dimming speed, and then a smooth deceleration to a stop, prevents abrupt starts/stops.
      - **Delay:** A pause before the transition starts.
 
-1. **Halt Behavior (as discussed):**
+3. **Halt Behavior (as discussed):**
 
    - **Concept:** Stop the current transition immediately and hold the light at its current brightness/color. This is fundamental to "move/stop."
 
-1. **Minimum/Maximum Output Levels (Soft Limits):**
+4. **Minimum/Maximum Output Levels (Soft Limits):**
 
    - **Concept:** The actual physical dimming range of a fixture often doesn't go from true 0% to 100% perceived output, or might flicker at very low levels. Professional systems allow setting a "minimum dimmer value" (the lowest DMX value that still produces stable light) and a "maximum dimmer value" (which might be less than 100% if 100% leads to overdriving/undesirable color shift).
    - **Application:** Prevents flicker, extends fixture life, and ensures consistent low-end performance.
 
-1. **Fixture Personality/Profiles:**
+5. **Fixture Personality/Profiles:**
 
    - **Concept:** In DMX, each "moving light" or sophisticated fixture has a "personality file" that defines all its controllable parameters (intensity, pan, tilt, color wheels, gobos, effects, etc.), their DMX addresses, and how their values are interpreted.
    - **Relevance to ESPHome:** While not needing full DMX personalities, this concept highlights that different _types_ of lights (e.g., a simple white LED vs. an RGBW strip vs. a tunable white light) have different capabilities and optimal control parameters. The API should be flexible enough to expose these gracefully.

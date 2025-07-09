@@ -40,13 +40,13 @@ This isn't just about adding new features; it's about fundamentally improving th
 
 1. **Elevated User Experience:** Smooth, natural light changes are crucial for ambiance, comfort, and a premium smart home feel. This project aims to deliver that universally.
 
-1. **Simplified Automation & Control:** By building advanced dynamic control directly into the `light.turn_on` service and ESPHome, we significantly reduce the complexity of automations. No more convoluted `repeat` loops or custom scripts for basic dimming behavior!
+2. **Simplified Automation & Control:** By building advanced dynamic control directly into the `light.turn_on` service and ESPHome, we significantly reduce the complexity of automations. No more convoluted `repeat` loops or custom scripts for basic dimming behavior!
 
-1. **Improved Performance & Reliability:** Offloading high-frequency calculations and continuous dimming/color changes to the device (ESPHome) or centralizing efficient simulation in Home Assistant Core will reduce network chatter and latency, making your lights more responsive and your network less congested.
+3. **Improved Performance & Reliability:** Offloading high-frequency calculations and continuous dimming/color changes to the device (ESPHome) or centralizing efficient simulation in Home Assistant Core will reduce network chatter and latency, making your lights more responsive and your network less congested.
 
-1. **Alignment with Industry Standards:** By introducing concepts like `move`/`stop` actions and explicit dynamic state reporting, we're aligning Home Assistant's `light` domain more closely with robust lighting standards like Matter and Zigbee, future-proofing our capabilities.
+4. **Alignment with Industry Standards:** By introducing concepts like `move`/`stop` actions and explicit dynamic state reporting, we're aligning Home Assistant's `light` domain more closely with robust lighting standards like Matter and Zigbee, future-proofing our capabilities.
 
-1. **Backward Compatibility Guaranteed:** A core principle of this project is that all changes will be **fully backward-compatible**. Your existing automations and configurations will continue to work exactly as they do today. New features will be introduced as optional enhancements.
+5. **Backward Compatibility Guaranteed:** A core principle of this project is that all changes will be **fully backward-compatible**. Your existing automations and configurations will continue to work exactly as they do today. New features will be introduced as optional enhancements.
 
 ## The Proposed Solution: A Layered Approach
 
@@ -64,11 +64,11 @@ We've broken this ambitious project into manageable phases, with each Pull Reque
 
 1. **ESPHome Foundation:** Internal C++ refinements for smoother transitions and defining dynamic control profiles in YAML.
 
-1. **ESPHome Native Dynamic Control:** Implementing on-device continuous brightness/color changes and reporting dynamic state to Home Assistant.
+2. **ESPHome Native Dynamic Control:** Implementing on-device continuous brightness/color changes and reporting dynamic state to Home Assistant.
 
-1. **Home Assistant Universal Handling:** Core logic in Home Assistant to understand the new dynamic commands, introduce "simulated" capabilities, and orchestrate control for all lights.
+3. **Home Assistant Universal Handling:** Core logic in Home Assistant to understand the new dynamic commands, introduce "simulated" capabilities, and orchestrate control for all lights.
 
-1. **Ecosystem Integration & UX:** Frontend updates, simplified local button bindings for ESPHome, and comprehensive documentation to empower users and developers.
+4. **Ecosystem Integration & UX:** Frontend updates, simplified local button bindings for ESPHome, and comprehensive documentation to empower users and developers.
 
 ## How You Can Contribute
 

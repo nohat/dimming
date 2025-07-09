@@ -12,8 +12,8 @@ For most ZHA and Z-Wave JS lights, the `curve` parameter within the `dynamic_con
 
 - **Mechanism:** When a `light.turn_on` service call includes a `curve` (e.g., `logarithmic`, `s_curve`, or a custom point list) in its `dynamic_control` or `transition` parameters, the `LightTransitionManager` will:
   1. Determine the light's current brightness and the target brightness.
-  1. Calculate a series of intermediate brightness values **that follow the specified nonlinear curve** over the requested `transition` duration or `dynamic_control` `ramp_time`/`speed`.
-  1. Send these **pre-calculated, incrementally stepped brightness commands** to the ZHA or Z-Wave JS integration at a high frequency (e.g., every 50-100ms).
+  2. Calculate a series of intermediate brightness values **that follow the specified nonlinear curve** over the requested `transition` duration or `dynamic_control` `ramp_time`/`speed`.
+  3. Send these **pre-calculated, incrementally stepped brightness commands** to the ZHA or Z-Wave JS integration at a high frequency (e.g., every 50-100ms).
 - **Integration's Role:** The ZHA and Z-Wave JS integrations will simply receive these discrete, pre-curved brightness `set` commands and pass them to the device. They will not need to interpret the `curve` parameter themselves, as the curve application happens upstream in Home Assistant Core.
 - **Feature Flags:** For these integrations, the presence of `LightEntityFeature.TRANSITION_SIMULATED` and `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` will signal to Home Assistant Core that it should perform this software-based, curve-aware simulation if native protocol-level curve application is not available.
 
@@ -52,20 +52,20 @@ Here's how we can leverage these standards and practices in our work:
 
 1. **Human Visual Perception (Weber-Fechner Law / Stevens' Power Law):** The fundamental principle is that our perception of brightness is non-linear. A linear change in light output (e.g., from 0% to 100% measured lumens) does not equate to a linear change in _perceived_ brightness. Small changes at low light levels are much more noticeable than large changes at high light levels.
 
-1. **Logarithmic Dimming Curves:**
+2. **Logarithmic Dimming Curves:**
 
    - **Rationale:** These curves are designed to compensate for human visual perception, making dimming appear smooth and even across the entire range. A `logarithmic` curve ensures that perceived brightness changes linearly with the control input. This provides finer control at low light levels where the eye is more sensitive.
    - **Industry Adoption:** Logarithmic dimming is a standard in professional and theatrical lighting control (e.g., DMX, DALI) and is often the default.
 
-1. **DALI (Digital Addressable Lighting Interface) - IEC 62386 Standard:**
+3. **DALI (Digital Addressable Lighting Interface) - IEC 62386 Standard:**
 
    - This is a highly relevant standard as it explicitly defines a **standard logarithmic dimming curve** (and also a linear one). DALI devices typically default to this logarithmic curve. It specifies 254 control levels, with level 1 corresponding to 0.1% light output and level 254 to 100%. This is an excellent, well-defined curve we can adopt.
 
-1. **ANSI C137.1 (0-10V Dimming Interface):**
+4. **ANSI C137.1 (0-10V Dimming Interface):**
 
    - While an analog standard, drivers conforming to it sometimes offer selectable dimming curves (linear, logarithmic, soft linear, square law). This indicates the industry's recognition of the need for different curves.
 
-1. **S-Curve / Soft Linear / Square Law:** Other common curves that provide different "feels" for dimming.
+5. **S-Curve / Soft Linear / Square Law:** Other common curves that provide different "feels" for dimming.
 
    - **S-Curve:** Offers a slower change at the beginning and end of the dimming range, with a more rapid change in the middle, often creating a more natural or visually appealing effect.
    - **Square Law:** Often used to mimic the dimming behavior of incandescent bulbs.
@@ -82,7 +82,7 @@ The core idea is to perform the curve transformation in the software layer (eith
      - **ESPHome (PR 1.1/1.2):** Within the `LightState`'s internal processing, transforming the target perceived brightness (0-100%) to the raw output value (0-255 PWM duty cycle, etc.) using the logarithmic curve. This applies to native ESPHome transitions and dynamic control.
      - **Home Assistant Core `LightTransitionManager` (PR 3.2/3.3):** When simulating transitions or dynamic control, this manager would calculate the intermediate steps, applying the selected `curve` (defaulting to logarithmic) to convert perceived brightness levels to linear device brightness values before sending them to the integration.
 
-1. **Offer Predefined Named Curves as Options:**
+2. **Offer Predefined Named Curves as Options:**
 
    - **Options:** Provide a clear set of choices in both ESPHome's `dynamic_control_profiles` YAML (PR 1.2) and Home Assistant's `dynamic_control` service schema (PR 3.1).
      - `linear`: Direct mapping (1:1). Useful for debugging or specific industrial applications.
@@ -91,12 +91,12 @@ The core idea is to perform the curve transformation in the software layer (eith
      - `square_law` (or `power` with configurable exponent): To mimic incandescent.
    - **Implementation:** Define the mathematical functions for these curves in the respective codebases (ESPHome C++ and HA Python).
 
-1. **Allow Custom Curve Definition (Advanced):**
+3. **Allow Custom Curve Definition (Advanced):**
 
    - **Options:** For advanced users, allow a `custom` curve type defined by a list of `[input_percentage, output_percentage]` pairs (e.g., `[[0,0], [10, 1], [50, 20], [100, 100]]`). The system would then linearly interpolate between these user-defined points.
    - **Implementation:** This requires interpolation logic (e.g., `np.interp` equivalent) in both ESPHome and the `LightTransitionManager`.
 
-1. **Clear Documentation:**
+4. **Clear Documentation:**
 
    - **Explanation:** The documentation (PR 4.3) is paramount here. It should explain the concepts of perceived vs. measured brightness, the purpose of different dimming curves, and why logarithmic is generally preferred.
    - **Guidance:** Provide clear guidance on when to choose `linear` vs. `logarithmic` vs. other curves, and how to define custom ones.
@@ -107,8 +107,8 @@ As discussed, ZHA and Z-Wave JS integrations typically don't expose a dynamic "a
 
 - **Core-Level Curve Application:** For ZHA and Z-Wave JS devices, the `curve` parameter will be handled entirely by the **Home Assistant Core's `LightTransitionManager`**. This means:
   1. The `LightTransitionManager` will take the desired perceived brightness (0-100%) and apply the selected `curve` to calculate the corresponding _linear_ brightness value (0-255 or 0-99 depending on the device's actual range).
-  1. It will then send this calculated linear brightness value as a standard `SET` command (e.g., `Level Control Set` for Zigbee, `Multilevel Switch Set` for Z-Wave) to the device.
-  1. This ensures that _all_ dimmable lights in Home Assistant can benefit from these perceptual dimming curves, even if the underlying hardware is "linear" in its native command interpretation.
+  2. It will then send this calculated linear brightness value as a standard `SET` command (e.g., `Level Control Set` for Zigbee, `Multilevel Switch Set` for Z-Wave) to the device.
+  3. This ensures that _all_ dimmable lights in Home Assistant can benefit from these perceptual dimming curves, even if the underlying hardware is "linear" in its native command interpretation.
 - **Device-Specific Parameters (Caveat):** Some advanced Z-Wave (and rare Zigbee quirk) devices _might_ have configuration parameters to set their _internal_ default dimming curve. If exposed by the integration, users could set this statically. However, it's generally recommended that if a user wants dynamic curve control, they should rely on Home Assistant's `curve` parameter and keep the device's internal curve linear/default to avoid compounding effects (e.g., a "logarithmic of a logarithmic" curve).
 
 By adopting these professional lighting control practices, we can deliver a significantly more refined and natural dimming experience across the entire Home Assistant ecosystem.

@@ -40,12 +40,12 @@ This would fit into **Phase 3b: Integration-Specific Updates** of our overall pl
        - Parse any Z2M-specific capability flags from the discovery payload
      - If native Z2M move/stop support is detected, add `LightEntityFeature.DYNAMIC_CONTROL` to `_attr_supported_features`
      - Always declare `LightEntityFeature.TRANSITION_SIMULATED` and `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` for all dimmable Z2M lights as fallback capabilities
-  1. **MQTT Topic Configuration:**
+  2. **MQTT Topic Configuration:**
      - Extend the existing topic configuration to handle dynamic control commands:
        - Use the existing `command_topic` (typically `zigbee2mqtt/[device_friendly_name]/set`) for sending dynamic control payloads
        - Listen to the existing `state_topic` (typically `zigbee2mqtt/[device_friendly_name]`) for state feedback
        - No new topics required - leverage Z2M's existing MQTT structure
-  1. **Mapping `dynamic_control` to MQTT Payloads:**
+  3. **Mapping `dynamic_control` to MQTT Payloads:**
      - In `MqttLight.async_turn_on()`, add handling for the new `dynamic_control` parameter:
      - If `dynamic_control` is present in `kwargs` and `LightEntityFeature.DYNAMIC_CONTROL` is supported:
        - **`type: "move"`:**
@@ -82,7 +82,7 @@ This would fit into **Phase 3b: Integration-Specific Updates** of our overall pl
      - The `mqtt_light` integration already subscribes to the device's `state_topic` for brightness and other state updates
      - Extend the `_state_message_received()` method to process additional state information
      - Monitor for rapid brightness changes that might indicate ongoing dynamic operations
-  1. **Dynamic State Inference:**
+  2. **Dynamic State Inference:**
      - **Command-based State Tracking:** When Home Assistant sends a `brightness_move` command via `async_turn_on()`, immediately set the entity's `_attr_dynamic_state`:
        - `{"brightness_move": positive_value}` → `moving_brightness_up`
        - `{"brightness_move": negative_value}` → `moving_brightness_down`
@@ -96,11 +96,11 @@ This would fit into **Phase 3b: Integration-Specific Updates** of our overall pl
        - For standard transitions (via `transition` parameter), Z2M typically handles these natively
        - If Home Assistant Core's `LightTransitionManager` is simulating the transition, it will manage the `transitioning` state
        - For Z2M native transitions, infer `transitioning` state when a `transition` parameter was included in the last command and brightness is still changing toward the target
-  1. **State Update Mechanism:**
+  3. **State Update Mechanism:**
      - Add `_attr_dynamic_state` property to the `MqttLight` class
      - Ensure `async_write_ha_state()` is called whenever `dynamic_state` changes
      - Include the new state in the entity's state attributes for visibility in Developer Tools
-  1. **Coordination with HA Core:**
+  4. **Coordination with HA Core:**
      - When `LightTransitionManager` is handling simulation, ensure the MQTT integration doesn't conflict with core state management
      - Provide clear handoff between native Z2M operations and HA Core simulation based on declared features
 - **Testing:**
@@ -120,11 +120,11 @@ This would fit into **Phase 3b: Integration-Specific Updates** of our overall pl
      - When Z2M publishes device discovery payloads for controller devices (remotes, switches, rotary encoders), detect controller capabilities
      - Look for Z2M-specific device classes like `remote_control`, `action_sensor`, or specific device models known to be controllers
      - Automatically create appropriate `event` entities alongside any traditional sensor entities
-  1. **Event Entity Creation and Management:**
+  2. **Event Entity Creation and Management:**
      - For controller devices, create `event` entities with standardized naming (e.g., `event.ikea_tradfri_remote_action`)
      - Subscribe to the device's action topic (typically `zigbee2mqtt/[device_name]/action` or similar)
      - Process incoming MQTT messages and translate them into Home Assistant events
-  1. **Standardized `event_data` Translation:**
+  3. **Standardized `event_data` Translation:**
      - Map Z2M's device-specific action payloads to our universal `ControllerEventData` schema:
        - **Button Actions:** Z2M's `{"action": "single"}` → `{"action": "single", "action_id": "button_1"}`
        - **Multi-button Devices:** Z2M's `{"action": "on"}` → `{"action": "single", "action_id": "power_on"}`
@@ -132,11 +132,11 @@ This would fit into **Phase 3b: Integration-Specific Updates** of our overall pl
        - **Hold Actions:** Z2M's `{"action": "brightness_up_hold"}` → `{"action": "hold", "action_id": "brightness_up"}`
      - Handle Z2M-specific quirks and variations across different device manufacturers
      - Provide fallback handling for unknown action types
-  1. **Configuration Options:**
+  4. **Configuration Options:**
      - Allow users to customize action mapping via MQTT configuration if needed
      - Support for device-specific action translation templates
      - Option to enable/disable automatic event entity creation
-  1. **Integration with Existing MQTT Device Triggers:**
+  5. **Integration with Existing MQTT Device Triggers:**
      - Ensure compatibility with existing MQTT device trigger automations
      - Provide migration path for users already using device triggers
      - Allow both event entities and device triggers to coexist

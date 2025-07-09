@@ -43,15 +43,15 @@ When `light.turn_on` is called in Home Assistant with a `transition` or `dynamic
 
 1. **Check for Native `DYNAMIC_CONTROL`:**
    - If `LightEntityFeature.DYNAMIC_CONTROL` is set for the entity, HA passes the entire `dynamic_control` dictionary (and other parameters) directly to the underlying integration/device. The device is expected to handle it natively and report `dynamic_state`.
-1. **Check for Native `TRANSITION` (if `dynamic_control` was not handled natively):**
+2. **Check for Native `TRANSITION` (if `dynamic_control` was not handled natively):**
    - If a `transition` parameter is present and `LightEntityFeature.TRANSITION` is set, HA passes `transition` to the integration/device. The device is expected to handle the fade natively.
-1. **Check for `DYNAMIC_CONTROL_SIMULATED` (if not handled natively):**
+3. **Check for `DYNAMIC_CONTROL_SIMULATED` (if not handled natively):**
    - If `dynamic_control` is present, but `LightEntityFeature.DYNAMIC_CONTROL` is _not_ set, then:
      - If `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` _is_ set, the Home Assistant core's `LightTransitionManager` takes over. It initiates the rapid incremental `light.turn_on` calls to simulate the `move`/`stop` and sets the light's internal `dynamic_state` to `simulated_moving_...`.
-1. **Check for `TRANSITION_SIMULATED` (if not handled natively or simulated `dynamic_control`):**
+4. **Check for `TRANSITION_SIMULATED` (if not handled natively or simulated `dynamic_control`):**
    - If `transition` is present, but `LightEntityFeature.TRANSITION` is _not_ set, then:
      - If `LightEntityFeature.TRANSITION_SIMULATED` _is_ set, the `LightTransitionManager` takes over. It calculates the steps and sends rapid incremental `light.turn_on` calls to simulate the fade and sets the light's internal `dynamic_state` to `simulated_transitioning`.
-1. **No Advanced Feature (Fallback):**
+5. **No Advanced Feature (Fallback):**
    - If none of the above feature flags are set for the requested `transition` or `dynamic_control` parameters, those parameters are simply ignored, and the light's state changes instantly (as it does today).
 
 This layered approach ensures that Home Assistant provides the best possible user experience based on the capabilities declared by each device's integration, while always prioritizing native, on-device execution for optimal performance.

@@ -14,17 +14,17 @@ Transform the Control Mapping wizard from a manual configuration tool into an in
 
 1. **Recognize Controller Type:** Identify the connected device as a "dimmer switch," "scene remote," "rotary controller," etc., based on its declared capabilities (e.g., exposed event entities, device class, or integration-specific metadata).
 
-1. **Infer Common Actions:** For recognized controller types, suggest common mappings for its standard buttons/controls to relevant light actions.
+2. **Infer Common Actions:** For recognized controller types, suggest common mappings for its standard buttons/controls to relevant light actions.
 
-1. **Pre-populate Light Action Defaults:** When a light is selected as a target, pre-fill the `dynamic_control` parameters with sensible defaults (e.g., `logarithmic` curve, `medium` speed for dimming, `toggle` for on/off).
+3. **Pre-populate Light Action Defaults:** When a light is selected as a target, pre-fill the `dynamic_control` parameters with sensible defaults (e.g., `logarithmic` curve, `medium` speed for dimming, `toggle` for on/off).
 
-1. **Recognizes Controller Types**: Automatically identifies device capabilities and common usage patterns
+4. **Recognizes Controller Types**: Automatically identifies device capabilities and common usage patterns
 
-1. **Suggests Optimal Mappings**: Provides pre-configured mappings based on device type and target lights
+5. **Suggests Optimal Mappings**: Provides pre-configured mappings based on device type and target lights
 
-1. **Populates Intelligent Defaults**: Auto-fills dynamic control parameters with perceptually optimized settings
+6. **Populates Intelligent Defaults**: Auto-fills dynamic control parameters with perceptually optimized settings
 
-1. **Enables One-Click Setup**: Allows complete configuration with minimal user interaction
+7. **Enables One-Click Setup**: Allows complete configuration with minimal user interaction
 
 ## Future Enhancement Phases
 

@@ -5,12 +5,12 @@ This document provides a comprehensive catalog of workarounds currently used in 
 ## Table of Contents
 
 1. [ControllerX Framework](#controllerx-framework)
-1. [Home Assistant Native Workarounds](#home-assistant-native-workarounds)
-1. [Blueprint-Based Solutions](#blueprint-based-solutions)
-1. [ESPHome Workarounds](#esphome-workarounds)
-1. [Protocol-Specific Solutions](#protocol-specific-solutions)
-1. [Third-Party Solutions](#third-party-solutions)
-1. [Analysis and Limitations](#analysis-and-limitations)
+2. [Home Assistant Native Workarounds](#home-assistant-native-workarounds)
+3. [Blueprint-Based Solutions](#blueprint-based-solutions)
+4. [ESPHome Workarounds](#esphome-workarounds)
+5. [Protocol-Specific Solutions](#protocol-specific-solutions)
+6. [Third-Party Solutions](#third-party-solutions)
+7. [Analysis and Limitations](#analysis-and-limitations)
 
 ## ControllerX Framework
 

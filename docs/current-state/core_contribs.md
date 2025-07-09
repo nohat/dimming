@@ -11,13 +11,13 @@ Here's a breakdown of comments and discussions from core developers:
    - In the Home Assistant Community thread "WhyTH is there not an options for smoothly dimming/brighten light and stopping the dimming/brighten effect?" (Source 1.3 from previous search results, dated August 2020), a user expresses frustration with the lack of a smooth dimming/brightening and stopping effect.
    - **Bram Kragten's comment:** "That will also not work for a lot of devices, Hue for example only allows a X number of requests per second." This comment directly acknowledges the _limitation_ of simply spamming `brightness_step` commands (the common workaround) due to device and network rate limits. It implicitly confirms that achieving truly smooth, interruptible dimming is a known challenge due to underlying protocol/device constraints. The core team is aware that direct automation loops are often insufficient.
 
-1. **Paulus Schoutsen (Home Assistant Creator):**
+2. **Paulus Schoutsen (Home Assistant Creator):**
 
    - While not always directly on "move/stop," Paulus often speaks to the core philosophy of Home Assistant that underpins this project:
      - **"You should not have to adapt to technology" / "The perfect app is no app":** (Source 5.3) This philosophy implies that basic, intuitive interactions like "hold to dim, release to stop" should _just work_ without complex user-written automations. The fact that users _do_ have to write complex automations for this highlights a gap against this ideal.
      - **Emphasis on local, unified control:** (Source 5.2, 5.4) His vision for Home Assistant as a central hub that integrates all devices and provides an "animation layer on top" strongly supports the idea of a universal `dynamic_control` service and the `LightTransitionManager` to normalize control across disparate devices.
 
-1. **`light.adjust` Service Discussion (GitHub Architecture Discussion #537 - Source 3.2, 3.3):**
+3. **`light.adjust` Service Discussion (GitHub Architecture Discussion #537 - Source 3.2, 3.3):**
 
    - This GitHub discussion from September 2022 directly explores adding a `light.adjust` service to change light attributes without necessarily turning the light on. While not specifically "move/stop," it's part of the broader conversation about more granular and flexible light control beyond simple `turn_on`/`turn_off`.
    - **Comments within this thread (by various contributors, sometimes including core team members or frequent maintainers):** Discuss the varying support for such features at the firmware level (e.g., LIFX has `set_state`, Hue doesn't), and the complexities of ensuring consistency. This demonstrates awareness of the inherent challenges of consistent light behavior across diverse integrations.

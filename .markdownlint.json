@@ -31,7 +31,9 @@
   "MD026": {
     "punctuation": ".,;:!。，；：！"
   },
-  "MD029": false,
+  "MD029": {
+    "style": "ordered"
+  },
   "MD030": {
     "ul_single": 1,
     "ol_single": 1,

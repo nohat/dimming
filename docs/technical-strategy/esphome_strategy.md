@@ -29,9 +29,9 @@ The move/stop modality is mandated by leading smart home protocols:
 Existing approaches to achieve move/stop functionality have significant drawbacks:
 
 1. **Complex YAML Configurations**: Require intricate logic with globals, intervals, and lambda functions
-1. **Network Overhead**: Multiple rapid commands create unnecessary traffic and latency
-1. **Unreliable Behavior**: Timing-dependent workarounds are prone to edge cases and failures
-1. **Poor User Experience**: Jerky, unresponsive dimming compared to commercial devices
+2. **Network Overhead**: Multiple rapid commands create unnecessary traffic and latency
+3. **Unreliable Behavior**: Timing-dependent workarounds are prone to edge cases and failures
+4. **Poor User Experience**: Jerky, unresponsive dimming compared to commercial devices
 
 ## Technical Analysis
 
@@ -48,9 +48,9 @@ The existing `LightState` class provides:
 To support move/stop functionality, ESPHome needs:
 
 1. **Enhanced State Tracking**: Monitor current interpolated values during transitions
-1. **Continuous Update Loop**: Support ongoing brightness/color adjustments without fixed endpoints
-1. **Immediate Halt Capability**: Stop transitions and preserve current state
-1. **Hardware Abstraction**: Consistent behavior across PWM, addressable LEDs, and other light types
+2. **Continuous Update Loop**: Support ongoing brightness/color adjustments without fixed endpoints
+3. **Immediate Halt Capability**: Stop transitions and preserve current state
+4. **Hardware Abstraction**: Consistent behavior across PWM, addressable LEDs, and other light types
 
 ### Proposed API Design
 

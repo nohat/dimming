@@ -24,7 +24,7 @@ Before diving into specific PRs, here's the standard workflow for contributing t
 
 1. **Fork the Repository:** Create your own fork of `home-assistant/core` and `esphome/esphome` on GitHub.
 
-1. **Clone Your Fork:** Clone your forked repositories to your local development machine.
+2. **Clone Your Fork:** Clone your forked repositories to your local development machine.
 
 ````text
     git clone https://github.com/YOUR_GITHUB_USERNAME/home-assistant.git
