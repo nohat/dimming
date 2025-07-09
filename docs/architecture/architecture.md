@@ -231,8 +231,6 @@ To achieve this vision, I propose the following architectural changes:
             H --> I[Physical Light Device]
         ```
 
-    - **Fallback Support:** For devices without native support, a standardized fallback mechanism is available. See [Simulated Dimming Documentation](./technical-strategy/simulated_dimming.md) for details on the fallback implementation.
-
 4. **Unified `dynamic_state` Attribute:**
 
     - Introduce a new `dynamic_state` attribute for `light` entities (e.g., `idle`, `transitioning`, `moving_brightness_up`, `moving_color_down`). This provides real-time feedback on the light's activity, crucial for UI and advanced automations.
