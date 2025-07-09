@@ -38,6 +38,7 @@ nav:
     - current-state/index.md
     - Community Discussions: current-state/community_discussions.md
     - Overview: current-state/current_state.md
+    - Current Workarounds: current-state/workarounds.md
     - Challenges & Risks: current-state/challenges.md
     - Core Contributors: current-state/core_contribs.md
   - Architecture:
