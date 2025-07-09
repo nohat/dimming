@@ -1,9 +1,3 @@
-## Kickoff Post: Revolutionizing Smart Lighting Control in Home Assistant
-
-Normal text
-
-Create
-
 # Kickoff: Revolutionizing Smart Lighting Control in Home Assistant!
 
 Hey Home Assistant Community!
