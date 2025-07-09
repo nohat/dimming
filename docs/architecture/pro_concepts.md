@@ -164,6 +164,7 @@ data:
   run efficiently on an ESP microcontroller, likely within the `loop()` or a dedicated `FastLED.show()` loop if using
   addressable LEDs. Floating-point math should be minimized where possible, or judiciously used.
 
-This proposed API leverages professional concepts to create a much more intuitive, flexible, and
-high-quality user experience for light control in Home Assistant and ESPHome. It moves beyond
-simple on/off and basic transitions to true dynamic lighting adjustment.
+This proposed API leverages professional concepts to create a much more intuitive, flexible, and high-quality user experience for light control in Home Assistant and ESPHome
+. It moves beyond simple on/off and basic transitions to true dynamic lighting adjustment.
+
+````

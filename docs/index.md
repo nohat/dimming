@@ -1,28 +1,27 @@
-# Universal Smart Lighting Control DocThis documentation provides comprehensive analysis and solutions across several key areas
+# Smooth Dimming
 
-## 📊 Current State Analysis
+**Smooth Dimming** - Responsive, Intuitive Smart Lighting Control
 
-**[Current State](current-state/current_state.md)** - Detailed analysis of existing lighting control limitationsation
+Smooth Dimming is the user experience of direct control of lighting brightness with intuitive and responsive controls. When users hold a button to adjust brightness, they expect smooth, natural dimming behavior similar to physical dimmer switches. That means the light should provide immediate feedback when a dimming button is pressed, and the brightness should change smoothly over time, not in abrupt steps. The dimming adjustment should stop instantly when the button is released, and the light should maintain its state accurately.
 
-This documentation comprehensively analyzes the current state of smart lighting control in Home Assistant, identifies
-critical limitations, and presents detailed technical solutions for achieving smooth, intuitive dimming across all
-devices and protocols.
+While support for this modality of control exists in many smart lighting protocols and many devices have native capabilities for smooth dimming built in to their firmware, achieving a consistent and unified experience across different platforms and devices remains a challenge. Home Assistant's current smart lighting control implementations has no native, first-class support for smooth dimming, forcing users to rely on clunky workarounds and low-level device-specific solutions which are difficult to configure and provide a subpar experience.
 
-## 🔍 The Problem
+## 🔍 The Problem: Gaps in Home Assistant's Smart Lighting Control API surface
 
-Smart lighting in Home Assistant today suffers from fundamental inconsistencies:
+- **Lack of native support** for smooth dimming in Home Assistant's core light services: the `light.turn_on` service supports:
+    - `brightness` and `brightness_pct` parameters for setting a specific brightness level, but does not support continuous dimming operations such as increasing or decreasing brightness.
+    - `brightness_step` and `brightness_step_pct` parameters for adjusting brightness in fixed increments from the current level.
+    - `transition` parameter for applying a duration to brightness changes. Such commands are fire-and-forget, lacking  real-time feedback or ability to cancel or adjust the transition mid-way.
 
-- **Choppy, unresponsive dimming** when holding buttons or using continuous controls
-- **Protocol fragmentation** - each integration handles brightness changes differently
-- **Poor user experience** - lacks the intuitive "hold-to-dim" behavior users expect from physical dimmers
-- **Performance issues** - excessive network traffic and device command flooding
-- **Inconsistent behavior** across different smart light brands and protocols
+- **Workarounds with automations**: Users often create complex automations to simulate smooth dimming behavior, but these solutions typically provide an inferior experience, with noticeable input lag and choppy dimming. These solutions rely on spamming the `light.turn_on` service with small brightness increments, which can flood delicate wireless networks, causing unexpected fluctuations in brightness, degrading the user experience of direct control.
+
+- **Limited protocol support**: Zigbee, Z-Wave, and Matter have native commands for smooth dimming, but Home Assistant has not integrated support for these capabilities into the core light services, requiring users who want to leverage them to implement low-level, platform-specific solutions. While not all devices support these features, many do, and there is significant untapped potential for users who adopt compatible hardware to have a unified dimming experience.
 
 ## 🧩 Observations
 
 While the problems are clear, the building blocks for a solution already exist across the smart lighting ecosystem:
 
-- **Native protocol capabilities** - Zigbee Move/Stop commands, Z-Wave Level Change, ESPHome streaming updates
+- **Native protocol capabilities** - Zigbee/Matter Level Control Move/Stop commands, Z-Wave Level Change, Tasmota `Dimmer < > !`
 - **Home Assistant's service architecture** - Existing light services that could be extended with dynamic control
   parameters
 - **Integration diversity** - Multiple pathways (ZHA, Zigbee2MQTT, Z-Wave JS, ESPHome) that each handle different device
@@ -32,8 +31,7 @@ While the problems are clear, the building blocks for a solution already exist a
   operations
 - **UI frameworks** - Frontend components that already support hold-to-dim gestures but lack backend coordination
 
-The challenge isn't inventing new technology—it's **orchestrating these existing capabilities** into a unified,
-intelligent system that automatically chooses the best approach for each device and situation.
+The challenge is **orchestrating these existing capabilities** into a unified, intelligent system that automatically chooses the best approach for each device and situation.
 
 ## 💡 The Vision
 
@@ -44,94 +42,14 @@ A unified lighting control system that provides:
 - **Consistent experience** across all smart lighting integrations
 - **Minimal latency** and optimized network usage
 
-## 📋 Documentation Structure
+## 🛠️ Proposed Solution
 
-This documentation provides comprehensive analysis and solutions across several key areas:
-
-### 📊 Current State Analysis
-
-**[Current State](current-state/current_state.md)** - Detailed analysis of existing lighting control limitations
-
-- [Core Problems](current-state/challenges.md) - Fundamental issues with current implementations
-- [Community Discussions](current-state/community_discussions.md) - User feedback and pain points
-- [Existing Workarounds](current-state/workarounds.md) - Current community solutions and their limitations
-
-### 🏗️ Solution Architecture
-
-**[Technical Architecture](architecture/architecture.md)** - Comprehensive solution design
-
-- [Project Scope](architecture/scope.md) - Requirements and constraints
-- [Core Concepts](architecture/pro_concepts.md) - Fundamental design principles
-- [Project Planning](architecture/project_plan.md) - Implementation timeline
-
-### ⚙️ Implementation Strategy
-
-**[Technical Strategy](technical-strategy/ha_strategy.md)** - Home Assistant core integration approach
-
-- [ESPHome Integration](technical-strategy/esphome_strategy.md) - ESPHome-specific solutions
-- [Nonlinear Dimming](technical-strategy/nonlinear_dimming.md) - Perceptual brightness algorithms
-- [Simultaneous Control](technical-strategy/simultaneous_dimming.md) - Multi-device coordination
-
-### 🔌 Integration Analysis
-
-**[Platform Support](integration-guides/capability_matrix.md)** - Device and protocol capability analysis
-
-- [Zigbee2MQTT](integration-guides/zigbee2mqtt.md) - Zigbee protocol optimization
-- [ZHA & Z-Wave](integration-guides/zha_zwave.md) - Native Home Assistant integration support
-- [Tasmota](integration-guides/tasmota.md) - Tasmota firmware capabilities
-- [Tuya](integration-guides/tuya.md) - Cloud-based device handling
-
-### 🚀 Implementation Plans
-
-**[Engineering Execution](implementation/eng_execution.md)** - Detailed development roadmap
-
-- [Alternative Approaches](implementation/execution_plan_b.md) - Fallback implementation strategies
-
-## 🎯 Key Documents
-
-| Focus Area           | Document                                                     | Purpose                            |
-| -------------------- | ------------------------------------------------------------ | ---------------------------------- |
-| **Problem Analysis** | [Current State Overview](current-state/current_state.md)     | Understanding existing limitations |
-| **Solution Design**  | [Core Architecture](architecture/architecture.md)            | Comprehensive technical solution   |
-| **Implementation**   | [Home Assistant Strategy](technical-strategy/ha_strategy.md) | Integration with HA core systems   |
-| **Device Support**   | [Capability Matrix](integration-guides/capability_matrix.md) | Protocol and device analysis       |
-| **Development**      | [Engineering Execution](implementation/eng_execution.md)     | Implementation roadmap and phases  |
-
-## 🎛️ Technical Solution Overview
-
-The proposed solution introduces a centralized `LightTransitionManager` in Home Assistant Core that:
-
-- **Understands device capabilities** - leverages native protocol features where available
-- **Provides unified API** - consistent `dynamic_control` service across all integrations
-- **Optimizes performance** - reduces network traffic through intelligent batching and native commands
-- **Ensures smooth experience** - handles timing, curves, and state management centrally
-- **Maintains compatibility** - works with existing automations and UI components
-
-### Core Features
-
-- `dynamic_control` service parameter for continuous dimming operations
-- Native protocol support (Zigbee Move/Stop, Z-Wave Level Change, ESPHome streaming)
-- Intelligent fallback simulation for devices lacking native support
-- Real-time state feedback via `dynamic_state` attribute
-- Perceptually uniform brightness curves for natural dimming feel
-
-______________________________________________________________________
-
-## 📖 Navigation Guide
-
-_This documentation contains {{ doc_count() }} pages of analysis and technical solutions (last updated {{ last_updated()
-}})_
+- **New optional parameters in the `light.turn_on` service**
+    - `action`: `move_brightness`, `move_color_temp`,  `move_color`, `move_hue`, `move_saturation`, `stop`
+    - `direction`: `up`, `down`
+    - `speed`: an integer value representing the speed of the movement in units per second, e.g. 255 to adjust entire brightness range in 1 second, 85 to adjust in 3 seconds, etc.
+    - `speed_pct`: a float value representing the speed of the movement in percentage per second, e.g. 200.0 for 200% per second, 25.0 for 25% per second, meaning the full brightness range will be adjusted in 0.5 seconds or 4 seconds respectively.
+- **New light attributes**
+    - `current_action`: the current action being performed (e.g. `move_brightness`, `move_color_temp`, etc.)
 
 <!-- AUTO_TOC -->
-
-**Start with the problem**: Begin with [Current State Analysis](current-state/current_state.md) to
-understand the limitations of existing smart lighting control.
-
-**Explore the solution**: Review the [Core Architecture](architecture/architecture.md) for the complete technical proposal.
-
-**Dive into specifics**: Browse integration guides and implementation details for your areas of interest.
-
-______________________________________________________________________
-
-_This documentation represents comprehensive analysis and proposed solutions for Home Assistant's lighting control challenges
-. For community discussion and feedback, see [Resources](resources/kickoff_post.md)._

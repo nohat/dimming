@@ -56,7 +56,7 @@ data:
     # Global stop command within dynamic_control (convenience)
     stop_all: true          # Optional: if true, stops all ongoing dynamic brightness/color moves.
                             # If `brightness_action` or `color_action` is also 'stop', this is redundant.
-```text
+```
 
 **Backward Compatibility Rationale for `light.turn_on`:**
 
@@ -75,7 +75,6 @@ data:
 To support the sophisticated parameters like `speed` and `curve` with named profiles, we'd add new global
 configurations.
 
-```yaml
 ```yaml
 # In your ESPHome device's main YAML file
 light:
@@ -107,7 +106,7 @@ light:
             - [60, 25]
             - [100, 100]
         # Custom curves can be defined with 'points' or other curve parameters
-```text
+```
 
 **Rationale for Global Profiles:**
 
@@ -234,13 +233,7 @@ maintaining a commitment to user experience and compatibility.
 
 ---
 
-You're absolutely right! My apologies again for not fully capturing the nuance of Tasmota's dedicated `Dimmer <`, `Dimmer >`, and `Dimmer !` commands
-.
-That was a significant omission, as those commands are indeed central to how Tasmota provides dynamic control on the device
-. Thanks for keeping me honest and helping me refine my understanding!
-
-Now, let's build a strategic, incremental implementation plan for ESPHome and Home Assistant, ensuring each PR delivers a self-contained, useful feature
-. This will allow for continuous integration, testing, and feedback, minimizing disruption.
+You're absolutely right! My apologies again for not fully capturing the nuance of Tasmota's dedicated `Dimmer <`, `Dimmer >`, and `Dimmer !` commands. That was a significant omission, as those commands are indeed central to how Tasmota provides dynamic control on the device. Thanks for keeping me honest and helping me refine my understanding! Now, let's build a strategic, incremental implementation plan for ESPHome and Home Assistant, ensuring each PR delivers a self-contained, useful feature. This will allow for continuous integration, testing, and feedback, minimizing disruption.
 
 ---
 
@@ -443,4 +436,3 @@ The goal is to implement the proposed dynamic light control features in ESPHome 
 
 This strategic rollout ensures that each step provides concrete value, is manageable for review and testing, and
 incrementally builds towards a powerful and seamless lighting control experience.
-````
