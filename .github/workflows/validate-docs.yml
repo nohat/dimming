@@ -36,6 +36,10 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
           
+      - name: Install local plugins
+        run: |
+          pip install -e .
+          
       - name: Validate documentation structure
         run: |
           echo "🔍 Checking documentation structure..."

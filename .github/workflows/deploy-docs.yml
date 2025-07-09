@@ -47,6 +47,10 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
       
+      - name: Install local plugins
+        run: |
+          pip install -e .
+      
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v4
