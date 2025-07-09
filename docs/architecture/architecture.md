@@ -1,5 +1,6 @@
 ---
-description: Main technical proposal for universal lighting control - a unified architecture for intuitive and performant dynamic lighting control in Home Assistant
+description: Main technical proposal for universal lighting control - a unified architecture for intuitive and
+performant dynamic lighting control in Home Assistant
 summary: Core architectural document proposing a fundamental enhancement to Home Assistant's lighting control system
 priority: essential
 ---
@@ -10,91 +11,146 @@ priority: essential
 
 ### Executive Summary
 
-This proposal outlines a plan to fundamentally enhance Home Assistant's lighting control, creating a unified system for smooth, intuitive dimming—like turning a physical dimmer knob. It directly addresses long-standing user frustrations with choppy or unresponsive lights and introduces a "conductor" (a new core component) to orchestrate seamless brightness and color changes across all smart lights, regardless of brand or protocol. By leveraging native device capabilities and providing optimized simulation for unsupported devices, we aim to empower users with intuitive control while significantly improving performance and reliability. The initial focus will be on core "Move"/"Stop" functionality, with further enhancements planned incrementally.
+This proposal outlines a plan to fundamentally enhance Home Assistant's lighting control, creating a unified system for smooth, intuitive dimming—like turning a physical dimmer knob
+.
+It directly addresses long-standing user frustrations with choppy or unresponsive lights and introduces a "conductor" (a new core component) to orchestrate seamless brightness and color changes across all smart lights, regardless of brand or protocol
+.
+By leveraging native device capabilities and providing optimized simulation for unsupported devices, we aim to empower users with intuitive control while significantly improving performance and reliability
+. The initial focus will be on core "Move"/"Stop" functionality, with further enhancements planned incrementally.
 
 ### Introduction
 
-I am proposing a significant architectural enhancement to Home Assistant’s lighting control, creating a unified system for smooth, intuitive dimming—like turning a physical dimmer knob. This addresses user frustrations with choppy or unresponsive lights and introduces a “conductor” (a new core component) to orchestrate seamless brightness changes across all smart lights, regardless of brand or protocol.
+I am proposing a significant architectural enhancement to Home Assistant’s lighting control, creating a unified system for smooth, intuitive dimming—like turning a physical dimmer knob
+.
+This addresses user frustrations with choppy or unresponsive lights and introduces a “conductor” (a new core component) to orchestrate seamless brightness changes across all smart lights, regardless of brand or protocol.
 
-This proposal outlines the objective, strategic approach, and core technical requirements for this architectural shift, with a commitment to implement the proposed changes if accepted.
+This proposal outlines the objective, strategic approach, and core technical requirements for this architectural shift,
+with a commitment to implement the proposed changes if accepted.
 
 ### The Problem: Current Limitations in Dynamic Lighting UX
 
-While Home Assistant excels at integrating a vast array of lighting hardware, the user experience for dynamic light control often falls short of expectations. This section articulates the core user experience challenges and their underlying technical causes.
+While Home Assistant excels at integrating a vast array of lighting hardware, the user experience for dynamic light control often falls short of expectations
+. This section articulates the core user experience challenges and their underlying technical causes.
 
 1. **Suboptimal User Experience for Dynamic Light Changes:**
 
-   - **Inconsistent and Abrupt Transitions:** Lights often jump or stutter instead of smoothly fading, even when a `transition` is specified. The expected smooth fade is frequently ignored or poorly implemented by integrations, leading to a jarring user experience.
+   - **Inconsistent and Abrupt Transitions:** Lights often jump or stutter instead of smoothly fading, even when a
+     `transition` is specified. The expected smooth fade is frequently ignored or poorly implemented by
+     integrations, leading to a jarring user experience.
 
      - [Adaptive Lightning transition not working properly (Home Assistant Community)](https://www.reddit.com/r/homeassistant/comments/1i3eqes/adaptive_lightning_transition_not_working_properly/ "null")
 
-       - **Relevance:** Users report specific lights or groups not transitioning smoothly, or transitions failing entirely, especially with Adaptive Lighting. This highlights the current unreliability of the `transition` parameter across different devices and groups, leading to a jarring user experience.
+       - **Relevance:** Users report specific lights or groups not transitioning smoothly, or transitions failing
+         entirely, especially with Adaptive Lighting. This highlights the current unreliability of the
+         `transition` parameter across different devices and groups, leading to a jarring user experience.
 
      - [Lights do not always follow transition correctly with light.turn_on (GitHub Issue #100371)](https://github.com/home-assistant/core/issues/100371 "null")
 
-       - **Relevance:** This bug report details how `light.turn_on` with `transition` is inconsistently applied by the Hue integration, sometimes defaulting to a 1-second transition or ignoring it completely. This demonstrates a core integration's failure to consistently honor the `transition` parameter, leading to an unpredictable user experience.
+       - **Relevance:** This bug report details how `light.turn_on` with `transition` is inconsistently applied by the
+         Hue integration, sometimes defaulting to a 1-second transition or ignoring it completely. This
+         demonstrates a core integration's failure to consistently honor the `transition` parameter, leading to
+         an unpredictable user experience.
 
      - [Tasmota Issue #10382 (GitHub)](https://github.com/arendst/Tasmota/issues/10382 "null")
 
-       - **Relevance:** This issue, and the linked Tasmota PR, highlight that changing `Fade` during a fade is not reliably supported in Tasmota and can lead to "unpredictable behavior." This underscores the general problem of inconsistent and unreliable transition handling at the device/firmware level, which Home Assistant must abstract.
+       - **Relevance:** This issue, and the linked Tasmota PR, highlight that changing `Fade` during a fade is not
+         reliably supported in Tasmota and can lead to "unpredictable behavior." This underscores the general
+         problem of inconsistent and unreliable transition handling at the device/firmware level, which Home
+         Assistant must abstract.
 
-   - **Missing Intuitive Continuous Control:** There is no standardized, built-in way to initiate and halt continuous dimming or color adjustments (the "move/stop" functionality common in physical dimmers). Users are currently forced to rely on complex, brittle automations as workarounds.
+   - **Missing Intuitive Continuous Control:** There is no standardized, built-in way to initiate and halt continuous
+     dimming or color adjustments (the "move/stop" functionality common in physical dimmers). Users are currently
+     forced to rely on complex, brittle automations as workarounds.
 
      - [Dimming lights by holding a button (Home Assistant Community)](https://community.home-assistant.io/t/dimming-lights-by-holding-a-button/95472 "null")
 
-       - **Relevance:** This discussion shows users actively seeking "press-and-hold-to-dim" functionality and discussing the limitations of current approaches, including the potential for overwhelming communication channels with continuous command streams. It directly points to the missing native continuous control.
+       - **Relevance:** This discussion shows users actively seeking "press-and-hold-to-dim" functionality and
+         discussing the limitations of current approaches, including the potential for overwhelming
+         communication channels with continuous command streams. It directly points to the missing native
+         continuous control.
 
      - [Continuously increase brightness on long press (Home Assistant Community)](https://community.home-assistant.io/t/continuously-increase-brightness-on-long-press/459368 "null")
 
-       - **Relevance:** This thread illustrates users attempting to implement "long press to dim" using Home Assistant automations, but encountering issues with continuous loops and malformed messages. This highlights the difficulty and unreliability of achieving this common UX pattern with existing tools.
+       - **Relevance:** This thread illustrates users attempting to implement "long press to dim" using Home Assistant
+         automations, but encountering issues with continuous loops and malformed messages. This highlights the
+         difficulty and unreliability of achieving this common UX pattern with existing tools.
 
-   - **Visually Jarring Dimming Curves:** Light intensity changes often feel unnatural, especially at low levels, because current linear control does not align with human visual perception. This results in a perceived lack of fine control at the dimmer end of the spectrum.
+   - **Visually Jarring Dimming Curves:** Light intensity changes often feel unnatural, especially at low levels,
+     because current linear control does not align with human visual perception. This results in a perceived lack
+     of fine control at the dimmer end of the spectrum.
 
      - [Level adjustment curves for dimmers (Home Assistant Community Feature Requests)](https://community.home-assistant.io/t/level-adjustment-curves-for-dimmers/599316/3 "null")
 
-       - **Relevance:** Users explicitly request a "unified translation function" to change how dimmers progress through brightnesses, noting that linear dimming (e.g., 50% numerically) does not correspond to 50% perceived brightness. This is a direct feature request for perceptual dimming curves.
+       - **Relevance:** Users explicitly request a "unified translation function" to change how dimmers progress through
+         brightnesses, noting that linear dimming (e.g., 50% numerically) does not correspond to 50% perceived
+         brightness. This is a direct feature request for perceptual dimming curves.
 
      - [Change Dimmer Curve In Lights (Home Assistant Community)](https://community.home-assistant.io/t/change-dimmer-curve-in-lights/820841 "null")
 
-       - **Relevance:** Users are looking for scripts or blueprints to "change the dimmer curve" because they "feel like the dimmer curve is not good," indicating dissatisfaction with the current linear dimming behavior.
+       - **Relevance:** Users are looking for scripts or blueprints to "change the dimmer curve" because they "feel like
+         the dimmer curve is not good," indicating dissatisfaction with the current linear dimming behavior.
 
      - [Perceived Brightness Dimming (Home Assistant Community - Share your Projects!)](https://community.home-assistant.io/t/perceived-brightness-dimming/36436/11 "null")
 
-       - **Relevance:** This discussion delves into the technical reasons for non-linear dimming (human eye perception, luminaire characteristics) and provides a spreadsheet for calculating perceived brightness. This highlights the technical understanding and user desire for perceptually correct dimming that is not natively handled by HA.
+       - **Relevance:** This discussion delves into the technical reasons for non-linear dimming (human eye perception,
+         luminaire characteristics) and provides a spreadsheet for calculating perceived brightness. This
+         highlights the technical understanding and user desire for perceptually correct dimming that is not
+         natively handled by HA.
 
 2. **Underlying Technical Challenges & Inefficiencies:**
 
-   - **Over-reliance on Brittle, Performance-Degrading Workarounds:** To achieve continuous dimming or smoother transitions, users and even Home Assistant itself resort to rapid, iterative commands (e.g., `while` loops). This approach introduces significant technical debt and leads to:
+   - **Over-reliance on Brittle, Performance-Degrading Workarounds:** To achieve continuous dimming or smoother
+     transitions, users and even Home Assistant itself resort to rapid, iterative commands (e.g., `while` loops).
+     This approach introduces significant technical debt and leads to:
 
-     - **Stuttering and Latency:** The overhead of processing many small commands within Home Assistant, coupled with network delays, results in visible choppiness and delayed responses from lights.
+     - **Stuttering and Latency:** The overhead of processing many small commands within Home Assistant, coupled with
+       network delays, results in visible choppiness and delayed responses from lights.
 
        - [How can I get my lights to brighten smoothly? (Home Assistant Community)](https://www.reddit.com/r/homeassistant/comments/zp3bby/how_can_i_get_my_lights_to_brighten_smoothly/ "null")
 
-         - **Relevance:** Users describe lights brightening in "steps" or "jumps" even with `transition` or `repeat while` loops, indicating a lack of true visual smoothness. This directly illustrates the "stuttering" problem.
+         - **Relevance:** Users describe lights brightening in "steps" or "jumps" even with `transition` or `repeat
+           while` loops, indicating a lack of true visual smoothness. This directly illustrates the
+           "stuttering" problem.
 
        - [Automation Triggers quickly, executes slowly (1-3 seconds), each piece is fast on its own (0.01 seconds) (Home Assistant Community)](https://www.google.com/search?q=https://community.home-assistant.io/t/automation-triggers-quickly-executes-slowly-1-3-seconds-each-piece-is-fast-on-its-own-0.01-seconds/540329 "null")
 
-         - **Relevance:** This discussion highlights significant latency (1-3 seconds) when automations trigger light changes, even when individual service calls are fast. This demonstrates the "latency" and "disconnected" feel caused by the overhead of HA-side automation logic for dynamic control.
+         - **Relevance:** This discussion highlights significant latency (1-3 seconds) when automations trigger light
+           changes, even when individual service calls are fast. This demonstrates the "latency" and
+           "disconnected" feel caused by the overhead of HA-side automation logic for dynamic control.
 
-     - **Network Congestion:** Flooding local networks with frequent commands, especially for groups of lights, can degrade overall network performance and reliability.
+     - **Network Congestion:** Flooding local networks with frequent commands, especially for groups of lights, can
+       degrade overall network performance and reliability.
 
        - [Automation while loop makes Home assistant terrably slow (Home Assistant Community)](https://community.home-assistant.io/t/automation-while-loop-makes-home-assistant-terrably-slow/904660 "null")
 
-         - **Relevance:** Users report that `while` loops in automations, often used for continuous dimming, can make Home Assistant "terribly slow" and cause "failed commands," directly illustrating the performance and reliability issues due to network congestion.
+         - **Relevance:** Users report that `while` loops in automations, often used for continuous dimming, can make
+           Home Assistant "terribly slow" and cause "failed commands," directly illustrating the performance
+           and reliability issues due to network congestion.
 
        - [Too many Matter/Thread devices causing a network jam? (60+) (Home Assistant Community)](https://community.home-assistant.io/t/too-many-matter-thread-devices-causing-a-network-jam-60/858801 "null")
 
-         - **Relevance:** While specific to Matter/Thread, this discussion about "network jam" when bulk-changing lights underscores the general problem of excessive network traffic caused by sending too many individual commands, which is exacerbated by HA-side loops for continuous dimming.
+         - **Relevance:** While specific to Matter/Thread, this discussion about "network jam" when bulk-changing lights
+           underscores the general problem of excessive network traffic caused by sending too many individual
+           commands, which is exacerbated by HA-side loops for continuous dimming.
 
-     - **Suboptimal Workaround UX:** Even when attempting to compensate for latency, Home Assistant-side logic can lead to undesirable visual artifacts.
+     - **Suboptimal Workaround UX:** Even when attempting to compensate for latency, Home Assistant-side logic can lead
+       to undesirable visual artifacts.
 
        - [Tasmota PR #11269 description (GitHub)](https://github.com/arendst/Tasmota/pull/11269 "null")
 
-         - **Relevance:** The "Caveats" section of this PR describes a real-world workaround where a translation layer tracks button hold time and calculates the dimming value, leading to "overshoots and then flashes back to the correct level due to latencies." This directly illustrates the poor UX (overshoot, flash-back) caused by HA-side workarounds.
+         - **Relevance:** The "Caveats" section of this PR describes a real-world workaround where a translation layer
+           tracks button hold time and calculates the dimming value, leading to "overshoots and then flashes
+           back to the correct level due to latencies." This directly illustrates the poor UX (overshoot,
+           flash-back) caused by HA-side workarounds.
 
-   - **Failure to Consistently Expose and Leverage Native Device & Protocol Capabilities:** Many modern lighting devices and their underlying communication protocols possess efficient, native commands for continuous level changes (`Move`/`Stop`) and smooth transitions. Home Assistant's current `light.turn_on` service does not consistently or uniformly expose or utilize these capabilities, forcing inefficient workarounds and preventing a truly native experience. This results in:
+   - **Failure to Consistently Expose and Leverage Native Device & Protocol Capabilities:** Many modern lighting devices
+     and their underlying communication protocols possess efficient, native commands for continuous level changes
+     (`Move`/`Stop`) and smooth transitions. Home Assistant's current `light.turn_on` service does not consistently
+     or uniformly expose or utilize these capabilities, forcing inefficient workarounds and preventing a truly
+     native experience. This results in:
 
-     - **Missed Protocol Efficiencies:** Instead of sending a single "start dimming" command to the device, Home Assistant often sends many small, discrete brightness updates, increasing network traffic and latency.
+     - **Missed Protocol Efficiencies:** Instead of sending a single "start dimming" command to the device, Home
+       Assistant often sends many small, discrete brightness updates, increasing network traffic and latency.
 
        - **Zigbee & Matter:** The [Zigbee Cluster Library specification (Footnote 1)](https://zigbeealliance.org/wp-content/uploads/2019/12/07-5123-06-zigbee-cluster-library-specification.pdf "null") (adopted by Matter) explicitly defines "Move" and "Stop" commands within the Level cluster for continuous dimming. Despite this, Home Assistant's ZHA integration may not fully expose these (e.g., [ZHA Problem using the level control cluster using the UI](https://community.home-assistant.io/t/zha-problem-using-the-level-control-cluster-using-the-ui/374086 "null")), and users resort to workarounds even when the underlying protocol supports native `move`/`stop` ([New to zigbee, need some help dimming lights](https://community.home-assistant.io/t/new-to-zigbee-need-some-help-dimming-lights/834403 "null")).
 
@@ -106,19 +162,27 @@ While Home Assistant excels at integrating a vast array of lighting hardware, th
 
      - **Disconnected Physical Controls:** Physical remotes, such as the [IKEA TRÅDFRI Remote control](https://www.ikea.com/us/en/p/tradfri-remote-control-00443130/ "null"), natively send Zigbee "Move" and "Stop" commands. When these are not directly translated into corresponding Home Assistant service calls, the intuitive "hold-to-dim, release-to-stop" experience becomes difficult or impossible to replicate reliably.
 
-   - **Lack of Standardized Real-time State Feedback:** Home Assistant currently lacks a unified mechanism for `light` entities to report their active dynamic state (e.g., "currently dimming up," "transitioning"). This hinders the development of responsive UI elements and intelligent automations that need to react to a light's real-time activity.
+   - **Lack of Standardized Real-time State Feedback:** Home Assistant currently lacks a unified mechanism for `light`
+     entities to report their active dynamic state (e.g., "currently dimming up," "transitioning"). This hinders
+     the development of responsive UI elements and intelligent automations that need to react to a light's real-
+     time activity.
 
 ### The Vision: Seamless, Intuitive, and Performant Lighting
 
-This proposal aligns with Home Assistant’s mission to provide a device-agnostic, local-first platform by standardizing dynamic lighting control across diverse protocols (Zigbee, Z-Wave, Matter, etc.). By leveraging native device capabilities and providing optimized simulation for unsupported devices, we empower users with intuitive control while maintaining compatibility and performance.
+This proposal aligns with Home Assistant’s mission to provide a device-agnostic, local-first platform by standardizing dynamic lighting control across diverse protocols (Zigbee, Z-Wave, Matter, etc.)
+.
+By leveraging native device capabilities and providing optimized simulation for unsupported devices, we empower users with intuitive control while maintaining compatibility and performance.
 
-Our North Star is to make dynamic light control in Home Assistant feel as intuitive and responsive as a traditional high-quality dimmer switch, regardless of the underlying hardware. This means:
+Our North Star is to make dynamic light control in Home Assistant feel as intuitive and responsive as a traditional high-quality dimmer switch, regardless of the underlying hardware
+. This means:
 
-- **"Hold-to-dim, release-to-stop" as a First-Class Experience:** Direct, immediate, and smooth continuous dimming and color adjustment.
+- **"Hold-to-dim, release-to-stop" as a First-Class Experience:** Direct, immediate, and smooth continuous dimming and
+  color adjustment.
 
 - **Consistent Behavior:** Lights should respond predictably and smoothly across all integrations.
 
-- **Perceptually Uniform Changes:** Light changes should appear fluid and natural to the human eye, with appropriate dimming curves applied.
+- **Perceptually Uniform Changes:** Light changes should appear fluid and natural to the human eye, with appropriate
+  dimming curves applied.
 
 - **Optimal Performance:** Minimal latency and network load, leveraging native device capabilities wherever possible.
 
@@ -128,7 +192,9 @@ To achieve this vision, I propose the following architectural changes:
 
 1. **Standardized** `dynamic_control` Service **Parameter:**
 
-   - Extend the `light.turn_on` service schema with a new, optional `dynamic_control` parameter. This parameter will be a structured object defining the `type` of dynamic action (`move`, `stop`, `step`), `direction` (up/down), `speed`, and potentially a `curve` type (e.g., `logarithmic`).
+   - Extend the `light.turn_on` service schema with a new, optional `dynamic_control` parameter. This parameter will be
+     a structured object defining the `type` of dynamic action (`move`, `stop`, `step`), `direction` (up/down),
+     `speed`, and potentially a `curve` type (e.g., `logarithmic`).
 
    - **Example Service Call:**
 
@@ -143,7 +209,7 @@ To achieve this vision, I propose the following architectural changes:
          speed: 50 # units per second
          curve: "logarithmic"
 
-     ```
+```text
 
 ````text
 

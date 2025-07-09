@@ -1,6 +1,7 @@
 # Integration Guides
 
-This section provides platform-specific implementation guides and capability comparisons for various smart lighting integrations.
+This section provides platform-specific implementation guides and capability comparisons for various smart lighting
+integrations.
 
 ## 📋 Pages in this Section
 

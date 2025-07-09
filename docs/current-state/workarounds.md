@@ -1,6 +1,8 @@
 # Current Workarounds for Light Control Limitations
 
-This document provides a comprehensive catalog of workarounds currently used in the Home Assistant ecosystem to implement move/stop functionality, continuous dimming, and hold-to-release light control. These solutions demonstrate both the ingenuity of the community and the significant complexity users must navigate to achieve basic dimming functionality.
+This document provides a comprehensive catalog of workarounds currently used in the Home Assistant ecosystem to implement move/stop functionality, continuous dimming, and hold-to-release light control
+.
+These solutions demonstrate both the ingenuity of the community and the significant complexity users must navigate to achieve basic dimming functionality.
 
 ## Table of Contents
 
@@ -14,7 +16,8 @@ This document provides a comprehensive catalog of workarounds currently used in 
 
 ## ControllerX Framework
 
-ControllerX represents the most sophisticated workaround for light control limitations, providing a comprehensive framework for implementing hold-to-release dimming through AppDaemon.
+ControllerX represents the most sophisticated workaround for light control limitations, providing a comprehensive
+framework for implementing hold-to-release dimming through AppDaemon.
 
 ### Architecture Overview
 
@@ -90,7 +93,8 @@ async def release(self) -> None:
 
 ### Device-Specific Mappings
 
-ControllerX includes mappings for numerous devices that demonstrate the complexity of implementing hold-to-release across different hardware:
+ControllerX includes mappings for numerous devices that demonstrate the complexity of implementing hold-to-release
+across different hardware:
 
 #### IKEA TRADFRI (E1744) Example
 
@@ -180,7 +184,8 @@ Despite its sophistication, ControllerX has several limitations:
 3. **Performance Overhead**: Python-based loops with configurable delays (default 350ms)
 4. **Network Reliability**: Subject to timing issues and network delays
 5. **Device Support**: Requires specific mappings for each controller type
-6. **Documentation noted issues**: "When holding or rotating the controller... it doesn't stop changing brightness" due to network/timing issues
+6. **Documentation noted issues**: "When holding or rotating the controller... it doesn't stop changing brightness" due
+   to network/timing issues
 
 ## Home Assistant Native Workarounds
 
@@ -345,7 +350,9 @@ light:
 
 ## Blueprint-Based Solutions
 
-The Home Assistant Blueprint Exchange hosts numerous community-contributed solutions for implementing hold-to-dim functionality. These blueprints represent standardized automation templates that can be imported and configured by users, providing a middle ground between custom automations and complex frameworks like ControllerX.
+The Home Assistant Blueprint Exchange hosts numerous community-contributed solutions for implementing hold-to-dim functionality
+.
+These blueprints represent standardized automation templates that can be imported and configured by users, providing a middle ground between custom automations and complex frameworks like ControllerX.
 
 ### IKEA Dimmer Solutions
 
@@ -900,7 +907,9 @@ Based on community forum analysis:
 - Integration with HA device registry for automatic setup
 - Built-in performance monitoring and optimization suggestions
 
-The blueprint ecosystem represents a significant community effort to address hold-to-dim functionality gaps, providing solutions that bridge the gap between basic automations and complex frameworks while maintaining native Home Assistant integration.
+The blueprint ecosystem represents a significant community effort to address hold-to-dim functionality gaps, providing
+solutions that bridge the gap between basic automations and complex frameworks while maintaining native Home Assistant
+integration.
 
 ## ESPHome Workarounds
 
@@ -1104,7 +1113,8 @@ data:
 
 ### Matter Limitations
 
-Currently, there's no documented way to send Matter cluster commands directly from Home Assistant, forcing users to use automation-based workarounds for Matter devices.
+Currently, there's no documented way to send Matter cluster commands directly from Home Assistant, forcing users to use
+automation-based workarounds for Matter devices.
 
 ## Third-Party Solutions
 
@@ -1218,9 +1228,11 @@ void loop() {
 #### Professional Installation Concerns
 
 As noted in community discussions:
-> "I have actually sold a bunch of HA jobs coming up... I literally ripped out Lutron homeworks dimmers because I said this was the way better way."
+> "I have actually sold a bunch of HA jobs coming up... I literally ripped out Lutron homeworks dimmers because I said
+    this was the way better way."
 
-> "I have to do all those conditions and programming to get a dimmer to dim like a normal dimmer? ... I'd rather pay someone to put all 40 Lutron dimmers back in before doing that."
+> "I have to do all those conditions and programming to get a dimmer to dim like a normal dimmer? ... I'd rather pay
+    someone to put all 40 Lutron dimmers back in before doing that."
 
 This demonstrates the real-world impact on professional adoption and user satisfaction.
 
@@ -1246,7 +1258,9 @@ Common complaints across all solutions:
 
 ## Conclusion
 
-The extensive array of workarounds documented here demonstrates both the community's ingenuity and the fundamental gap in native light control capabilities. While solutions like ControllerX provide sophisticated functionality and community blueprints offer accessible alternatives, they all require significant expertise and resources to implement and maintain reliably.
+The extensive array of workarounds documented here demonstrates both the community's ingenuity and the fundamental gap in native light control capabilities
+.
+While solutions like ControllerX provide sophisticated functionality and community blueprints offer accessible alternatives, they all require significant expertise and resources to implement and maintain reliably.
 
 Key observations:
 
@@ -1258,7 +1272,11 @@ Key observations:
 6. **Blueprint ecosystem** provides middle ground but lacks standardization
 7. **Community fragmentation** across multiple solution approaches
 
-The blueprint ecosystem represents significant progress in making hold-to-dim functionality more accessible, with over 50+ community-contributed solutions covering major device types. However, even the most polished blueprints still suffer from the fundamental limitations of implementing continuous control through discrete automation steps.
+The blueprint ecosystem represents significant progress in making hold-to-dim functionality more accessible, with over 50+ community-contributed solutions covering major device types
+.
+However, even the most polished blueprints still suffer from the fundamental limitations of implementing continuous control through discrete automation steps.
 
-This analysis strongly supports the need for native move/stop functionality in both Home Assistant and ESPHome, as proposed in the strategy documents. The current workaround landscape creates barriers to adoption and forces users to choose between simplicity and functionality—a choice that shouldn't be necessary for basic lighting control.
+This analysis strongly supports the need for native move/stop functionality in both Home Assistant and ESPHome, as proposed in the strategy documents
+.
+The current workaround landscape creates barriers to adoption and forces users to choose between simplicity and functionality—a choice that shouldn't be necessary for basic lighting control.
 ````

@@ -2,21 +2,28 @@
 
 ## Overview
 
-This document outlines future enhancements to the Control Mapping system that would provide intelligent, auto-populated defaults based on device capabilities and common usage patterns. These features would build upon the core Control Mapping implementation to deliver an exceptional out-of-box experience.
+This document outlines future enhancements to the Control Mapping system that would provide intelligent, auto-populated defaults based on device capabilities and common usage patterns
+.
+These features would build upon the core Control Mapping implementation to deliver an exceptional out-of-box experience.
 
 ## Relationship to Core Control Mapping
 
-These enhancements extend the Phase 3 User Interface implementation described in `control_mapping.md`, specifically enhancing the Mapping Wizard (PR 3.2) with intelligent suggestions and automated configuration capabilities.
+These enhancements extend the Phase 3 User Interface implementation described in `control_mapping.md`, specifically
+enhancing the Mapping Wizard (PR 3.2) with intelligent suggestions and automated configuration capabilities.
 
 ## Enhanced User Experience Goals
 
 Transform the Control Mapping wizard from a manual configuration tool into an intelligent assistant that:
 
-1. **Recognize Controller Type:** Identify the connected device as a "dimmer switch," "scene remote," "rotary controller," etc., based on its declared capabilities (e.g., exposed event entities, device class, or integration-specific metadata).
+1. **Recognize Controller Type:** Identify the connected device as a "dimmer switch," "scene remote," "rotary
+   controller," etc., based on its declared capabilities (e.g., exposed event entities, device class, or integration-
+   specific metadata).
 
-2. **Infer Common Actions:** For recognized controller types, suggest common mappings for its standard buttons/controls to relevant light actions.
+2. **Infer Common Actions:** For recognized controller types, suggest common mappings for its standard buttons/controls
+   to relevant light actions.
 
-3. **Pre-populate Light Action Defaults:** When a light is selected as a target, pre-fill the `dynamic_control` parameters with sensible defaults (e.g., `logarithmic` curve, `medium` speed for dimming, `toggle` for on/off).
+3. **Pre-populate Light Action Defaults:** When a light is selected as a target, pre-fill the `dynamic_control`
+   parameters with sensible defaults (e.g., `logarithmic` curve, `medium` speed for dimming, `toggle` for on/off).
 
 4. **Recognizes Controller Types**: Automatically identifies device capabilities and common usage patterns
 
@@ -30,7 +37,8 @@ Transform the Control Mapping wizard from a manual configuration tool into an in
 
 ### Phase 6: Intelligent Configuration (Future)
 
-Building upon the core Control Mapping implementation, this phase would add intelligent automation to the configuration process.
+Building upon the core Control Mapping implementation, this phase would add intelligent automation to the configuration
+process.
 
 #### PR 6.1: Controller Profile System
 

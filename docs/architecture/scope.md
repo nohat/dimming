@@ -2,7 +2,8 @@
 
 ## Overview
 
-This document analyzes the potential user impact of implementing native dynamic light control capabilities in Home Assistant, specifically focusing on press-and-hold dimming functionality and transition improvements. The analysis estimates the number of users who would benefit from these enhancements.
+This document analyzes the potential user impact of implementing native dynamic light control capabilities in Home Assistant, specifically focusing on press-and-hold dimming functionality and transition improvements
+. The analysis estimates the number of users who would benefit from these enhancements.
 
 ## User Impact Estimation
 
@@ -12,7 +13,8 @@ Current data on Home Assistant's user base indicates:
 
 - **Analytics Limitations**: Home Assistant analytics are opt-in, resulting in underreported usage statistics
 - **Reported Installations**: As of September 2023, over 250,000 active installations were reported via analytics
-- **Estimated Total User Base**: Based on statements from "State of the Open Home 2025," current estimates suggest approximately 2 million active installations, with only 25% of users opting into analytics
+- **Estimated Total User Base**: Based on statements from "State of the Open Home 2025," current estimates suggest
+  approximately 2 million active installations, with only 25% of users opting into analytics
 - **Working Estimate**: 2,000,000 active Home Assistant installations
 
 ### Target User Segmentation
@@ -43,7 +45,8 @@ Current data on Home Assistant's user base indicates:
 **Adoption Analysis**:
 
 - Home Assistant users demonstrate higher-than-average investment in diverse smart home hardware
-- Physical controls remain popular despite voice and app alternatives, providing tactile feedback and guest accessibility
+- Physical controls remain popular despite voice and app alternatives, providing tactile feedback and guest
+  accessibility
 - Community discussions and existing automation blueprints indicate strong existing demand for hold-to-dim functionality
 
 **Estimated Adoption**: 60% of users with dimmable lights either possess compatible hardware or would likely acquire it
@@ -101,7 +104,8 @@ Current data on Home Assistant's user base indicates:
 
 ## Project Impact
 
-The implementation of native dynamic light control capabilities would directly benefit approximately **867,000 Home Assistant users** (43% of the total user base). This represents a substantial improvement in user experience for nearly half of all Home Assistant installations.
+The implementation of native dynamic light control capabilities would directly benefit approximately **867,000 Home Assistant users** (43% of the total user base)
+. This represents a substantial improvement in user experience for nearly half of all Home Assistant installations.
 
 ### Additional Benefits
 
@@ -112,4 +116,5 @@ Beyond the core user base analysis, this project would provide:
 - **Ecosystem Standardization**: Common interface encouraging hardware manufacturer adoption
 - **Future Capability Foundation**: Framework for advanced lighting control features
 
-The scope encompasses not only immediate user impact but establishes infrastructure for continued innovation in Home Assistant's lighting control capabilities.
+The scope encompasses not only immediate user impact but establishes infrastructure for continued innovation in Home
+Assistant's lighting control capabilities.

@@ -1,6 +1,7 @@
 # Resources
 
-This section contains additional resources, community posts, and reference materials related to the Universal Smart Lighting Control project.
+This section contains additional resources, community posts, and reference materials related to the Universal Smart
+Lighting Control project.
 
 ## 📋 Pages in this Section
 

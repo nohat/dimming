@@ -1,6 +1,7 @@
 # Technical Strategy
 
-This section outlines the technical implementation strategies across different platforms and the core enhancements needed for universal lighting control.
+This section outlines the technical implementation strategies across different platforms and the core enhancements
+needed for universal lighting control.
 
 ## 📋 Pages in this Section
 

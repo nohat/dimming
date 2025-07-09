@@ -1,12 +1,14 @@
 # Current State
 
-This section documents the current state of dynamic dimming in Home Assistant, including existing limitations, community discussions, and the challenges we're addressing.
+This section documents the current state of dynamic dimming in Home Assistant, including existing limitations, community
+discussions, and the challenges we're addressing.
 
 ## 📋 Pages in this Section
 
 ### [Overview](current_state.md)
 
-A comprehensive analysis of Home Assistant's current lighting control limitations and the gap that our Universal Smart Lighting Control project aims to fill.
+A comprehensive analysis of Home Assistant's current lighting control limitations and the gap that our Universal Smart
+Lighting Control project aims to fill.
 
 ### [Community Discussions](community_discussions.md)
 

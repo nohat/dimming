@@ -4,7 +4,9 @@
 
 **[Current State](current-state/current_state.md)** - Detailed analysis of existing lighting control limitationsation
 
-This documentation comprehensively analyzes the current state of smart lighting control in Home Assistant, identifies critical limitations, and presents detailed technical solutions for achieving smooth, intuitive dimming across all devices and protocols.
+This documentation comprehensively analyzes the current state of smart lighting control in Home Assistant, identifies
+critical limitations, and presents detailed technical solutions for achieving smooth, intuitive dimming across all
+devices and protocols.
 
 ## 🔍 The Problem
 
@@ -21,13 +23,17 @@ Smart lighting in Home Assistant today suffers from fundamental inconsistencies:
 While the problems are clear, the building blocks for a solution already exist across the smart lighting ecosystem:
 
 - **Native protocol capabilities** - Zigbee Move/Stop commands, Z-Wave Level Change, ESPHome streaming updates
-- **Home Assistant's service architecture** - Existing light services that could be extended with dynamic control parameters
-- **Integration diversity** - Multiple pathways (ZHA, Zigbee2MQTT, Z-Wave JS, ESPHome) that each handle different device types optimally
+- **Home Assistant's service architecture** - Existing light services that could be extended with dynamic control
+  parameters
+- **Integration diversity** - Multiple pathways (ZHA, Zigbee2MQTT, Z-Wave JS, ESPHome) that each handle different device
+  types optimally
 - **Community workarounds** - Existing automation patterns that demonstrate user demand and partial solutions
-- **Core infrastructure** - Home Assistant's event system and state management that can coordinate multi-device operations
+- **Core infrastructure** - Home Assistant's event system and state management that can coordinate multi-device
+  operations
 - **UI frameworks** - Frontend components that already support hold-to-dim gestures but lack backend coordination
 
-The challenge isn't inventing new technology—it's **orchestrating these existing capabilities** into a unified, intelligent system that automatically chooses the best approach for each device and situation.
+The challenge isn't inventing new technology—it's **orchestrating these existing capabilities** into a unified,
+intelligent system that automatically chooses the best approach for each device and situation.
 
 ## 💡 The Vision
 
@@ -113,11 +119,13 @@ ______________________________________________________________________
 
 ## 📖 Navigation Guide
 
-_This documentation contains {{ doc_count() }} pages of analysis and technical solutions (last updated {{ last_updated() }})_
+_This documentation contains {{ doc_count() }} pages of analysis and technical solutions (last updated {{ last_updated()
+}})_
 
 <!-- AUTO_TOC -->
 
-**Start with the problem**: Begin with [Current State Analysis](current-state/current_state.md) to understand the limitations of existing smart lighting control.
+**Start with the problem**: Begin with [Current State Analysis](current-state/current_state.md) to
+understand the limitations of existing smart lighting control.
 
 **Explore the solution**: Review the [Core Architecture](architecture/architecture.md) for the complete technical proposal.
 
@@ -125,4 +133,5 @@ _This documentation contains {{ doc_count() }} pages of analysis and technical s
 
 ______________________________________________________________________
 
-_This documentation represents comprehensive analysis and proposed solutions for Home Assistant's lighting control challenges. For community discussion and feedback, see [Resources](resources/kickoff_post.md)._
+_This documentation represents comprehensive analysis and proposed solutions for Home Assistant's lighting control challenges
+. For community discussion and feedback, see [Resources](resources/kickoff_post.md)._

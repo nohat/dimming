@@ -1,6 +1,7 @@
 # Architecture
 
-This section contains the core architectural proposals and design concepts for the Universal Smart Lighting Control system.
+This section contains the core architectural proposals and design concepts for the Universal Smart Lighting Control
+system.
 
 ## 📋 Pages in this Section
 
@@ -22,4 +23,5 @@ High-level project timeline, milestones, and execution strategy.
 
 ______________________________________________________________________
 
-_Start with the Core Proposal for the main architectural vision, then explore the supporting concepts and planning documents._
+_Start with the Core Proposal for the main architectural vision, then explore the supporting concepts and planning
+documents._

@@ -1,27 +1,34 @@
 ---
-description: Comprehensive comparison of native dimming capabilities across all lighting integrations including transition support and dynamic control features
+description: Comprehensive comparison of native dimming capabilities across all lighting integrations including
+transition support and dynamic control features
 summary: Device and protocol capability matrix for universal lighting control implementation
 priority: important
 ---
 
 # Capability Matrix
 
-Here's a capability matrix outlining the relevant declarations and concrete examples for different combinations of light features, focusing on `transition` and dynamic control (`move`/`stop`). This assumes the proposed new `LightEntityFeature` flags and the `LightTransitionManager` in Home Assistant Core are in place.
+Here's a capability matrix outlining the relevant declarations and concrete examples for different combinations of light features, focusing on `transition` and dynamic control (`move`/`stop`)
+.
+This assumes the proposed new `LightEntityFeature` flags and the `LightTransitionManager` in Home Assistant Core are in place.
 
 ## New Proposed `LightEntityFeature` Flags
 
-For this matrix, let's assume the following bit values (actual values would be chosen from available ones in Home Assistant's `LightEntityFeature` enum):
+For this matrix, let's assume the following bit values (actual values would be chosen from available ones in Home
+Assistant's `LightEntityFeature` enum):
 
 - `LightEntityFeature.TRANSITION = 32` (Existing, device natively handles `transition` parameter)
-- `LightEntityFeature.DYNAMIC_CONTROL = 64` (Proposed, device natively handles `dynamic_control` parameter for `move`/`stop`)
+- `LightEntityFeature.DYNAMIC_CONTROL = 64` (Proposed, device natively handles `dynamic_control` parameter for
+  `move`/`stop`)
 - `LightEntityFeature.TRANSITION_SIMULATED = 128` (Proposed, Home Assistant can _simulate_ `transition` for this device)
-- `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED = 256` (Proposed, Home Assistant can _simulate_ `dynamic_control` for this device)
+- `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED = 256` (Proposed, Home Assistant can _simulate_ `dynamic_control` for
+  this device)
 
 ______________________________________________________________________
 
 ### Capability Matrix Scenarios and Examples
 
-The `supported_features` attribute of a `light` entity is a bitmask. The presence of `_SIMULATED` flags means the _integration_ (e.g., ESPHome, ZHA, MQTT) declares its capability to perform the simulation if the device itself doesn't.
+The `supported_features` attribute of a `light` entity is a bitmask.
+The presence of `_SIMULATED` flags means the _integration_ (e.g., ESPHome, ZHA, MQTT) declares its capability to perform the simulation if the device itself doesn't.
 
 | Scenario                                                                              | `supported_features` Bitmask & Key Flags                                                    | Description                                                                                                                                                                                         | `light.turn_on(brightness_pct=50, transition=5)`       | `light.turn_on(dynamic_control={type: 'move', direction: 'up'})` | `dynamic_state` (reported to HA)                               | `current_brightness_actual` (device-side)                                 |
 | :------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------- | :--------------------------------------------------------------- | :------------------------------------------------------------- | :------------------------------------------------------------------------ |
@@ -39,19 +46,29 @@ ______________________________________________________________________
 
 ### How Home Assistant's `light.turn_on` Service Handler Would Orchestrate
 
-When `light.turn_on` is called in Home Assistant with a `transition` or `dynamic_control` parameter, the core logic would follow this hierarchy:
+When `light.turn_on` is called in Home Assistant with a `transition` or `dynamic_control` parameter, the core logic
+would follow this hierarchy:
 
 1. **Check for Native `DYNAMIC_CONTROL`:**
-   - If `LightEntityFeature.DYNAMIC_CONTROL` is set for the entity, HA passes the entire `dynamic_control` dictionary (and other parameters) directly to the underlying integration/device. The device is expected to handle it natively and report `dynamic_state`.
+   - If `LightEntityFeature.DYNAMIC_CONTROL` is set for the entity, HA passes the entire `dynamic_control` dictionary
+     (and other parameters) directly to the underlying integration/device. The device is expected to handle it
+     natively and report `dynamic_state`.
 2. **Check for Native `TRANSITION` (if `dynamic_control` was not handled natively):**
-   - If a `transition` parameter is present and `LightEntityFeature.TRANSITION` is set, HA passes `transition` to the integration/device. The device is expected to handle the fade natively.
+   - If a `transition` parameter is present and `LightEntityFeature.TRANSITION` is set, HA passes `transition` to the
+     integration/device. The device is expected to handle the fade natively.
 3. **Check for `DYNAMIC_CONTROL_SIMULATED` (if not handled natively):**
    - If `dynamic_control` is present, but `LightEntityFeature.DYNAMIC_CONTROL` is _not_ set, then:
-     - If `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` _is_ set, the Home Assistant core's `LightTransitionManager` takes over. It initiates the rapid incremental `light.turn_on` calls to simulate the `move`/`stop` and sets the light's internal `dynamic_state` to `simulated_moving_...`.
+     - If `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` _is_ set, the Home Assistant core's `LightTransitionManager`
+       takes over. It initiates the rapid incremental `light.turn_on` calls to simulate the `move`/`stop` and
+       sets the light's internal `dynamic_state` to `simulated_moving_...`.
 4. **Check for `TRANSITION_SIMULATED` (if not handled natively or simulated `dynamic_control`):**
    - If `transition` is present, but `LightEntityFeature.TRANSITION` is _not_ set, then:
-     - If `LightEntityFeature.TRANSITION_SIMULATED` _is_ set, the `LightTransitionManager` takes over. It calculates the steps and sends rapid incremental `light.turn_on` calls to simulate the fade and sets the light's internal `dynamic_state` to `simulated_transitioning`.
+     - If `LightEntityFeature.TRANSITION_SIMULATED` _is_ set, the `LightTransitionManager` takes over. It calculates the
+       steps and sends rapid incremental `light.turn_on` calls to simulate the fade and sets the light's internal
+       `dynamic_state` to `simulated_transitioning`.
 5. **No Advanced Feature (Fallback):**
-   - If none of the above feature flags are set for the requested `transition` or `dynamic_control` parameters, those parameters are simply ignored, and the light's state changes instantly (as it does today).
+   - If none of the above feature flags are set for the requested `transition` or `dynamic_control` parameters, those
+     parameters are simply ignored, and the light's state changes instantly (as it does today).
 
-This layered approach ensures that Home Assistant provides the best possible user experience based on the capabilities declared by each device's integration, while always prioritizing native, on-device execution for optimal performance.
+This layered approach ensures that Home Assistant provides the best possible user experience based on the capabilities
+declared by each device's integration, while always prioritizing native, on-device execution for optimal performance.

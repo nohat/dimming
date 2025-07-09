@@ -1,6 +1,7 @@
 # Documentation Validation Setup
 
-This directory contains tools and configurations to ensure documentation quality and prevent broken docs from being committed.
+This directory contains tools and configurations to ensure documentation quality and prevent broken docs from being
+committed.
 
 ## Quick Start
 

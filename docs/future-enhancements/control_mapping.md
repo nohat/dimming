@@ -2,7 +2,8 @@
 
 ## Vision
 
-Transform Home Assistant into a unified control platform where any physical control device can intuitively control any light or light group with sophisticated dynamic behaviors, without requiring complex automations or technical expertise.
+Transform Home Assistant into a unified control platform where any physical control device can intuitively control any
+light or light group with sophisticated dynamic behaviors, without requiring complex automations or technical expertise.
 
 ## Northstar
 
@@ -18,13 +19,15 @@ Currently, connecting control devices (remotes, switches, buttons) to lights req
 - Separate implementations for each device type and protocol
 - Poor discoverability of capabilities and options
 
-This creates a significant barrier to achieving intuitive lighting control that users expect from modern smart home systems.
+This creates a significant barrier to achieving intuitive lighting control that users expect from modern smart home
+systems.
 
 ## Technical Strategy
 
 ### Core Architecture Principles
 
-1. **Leverage Existing Constructs**: Build upon Home Assistant's existing Event entities rather than creating new event systems
+1. **Leverage Existing Constructs**: Build upon Home Assistant's existing Event entities rather than creating new event
+   systems
 2. **Declarative Configuration**: Enable simple, declarative mapping between control actions and light behaviors
 3. **Protocol Abstraction**: Abstract away protocol differences through standardized interfaces
 4. **Progressive Enhancement**: Support both software simulation and native hardware acceleration
@@ -36,7 +39,8 @@ This creates a significant barrier to achieving intuitive lighting control that 
 
 ### Goal
 
-Establish a unified schema for control device events that abstracts protocol differences and enables consistent handling across integrations.
+Establish a unified schema for control device events that abstracts protocol differences and enables consistent handling
+across integrations.
 
 ### PR 1.1: Core Event Schema Definition
 
@@ -76,7 +80,8 @@ class ControllerEventData(TypedDict):
 
 ### Goal
 
-Provide a core service for declaratively linking control device events to light entity actions with dynamic control parameters.
+Provide a core service for declaratively linking control device events to light entity actions with dynamic control
+parameters.
 
 ### PR 2.1: Core Mapping Service
 
@@ -137,7 +142,8 @@ homeassistant.link_control:
 
 ### Goal
 
-Create an intuitive, discoverable UI that makes control mapping accessible to all users regardless of technical expertise.
+Create an intuitive, discoverable UI that makes control mapping accessible to all users regardless of technical
+expertise.
 
 ### PR 3.1: Device Integration UI
 
@@ -177,7 +183,8 @@ Create an intuitive, discoverable UI that makes control mapping accessible to al
 
 ### Goal
 
-Enable direct device-to-device control where protocols support it, while maintaining Home Assistant oversight and advanced features.
+Enable direct device-to-device control where protocols support it, while maintaining Home Assistant oversight and
+advanced features.
 
 ### PR 4.1: Protocol Binding APIs
 

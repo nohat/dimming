@@ -2,7 +2,9 @@
 
 ## Executive Summary
 
-This document proposes implementing native "move/stop" light control functionality in ESPHome to align with Zigbee and Matter standards, improve user experience, and enable more intuitive manual light control. The move/stop modality—where users can initiate continuous brightness/color changes and halt them at any point—is a fundamental interaction pattern in modern smart home protocols that ESPHome currently lacks.
+This document proposes implementing native "move/stop" light control functionality in ESPHome to align with Zigbee and Matter standards, improve user experience, and enable more intuitive manual light control
+.
+The move/stop modality—where users can initiate continuous brightness/color changes and halt them at any point—is a fundamental interaction pattern in modern smart home protocols that ESPHome currently lacks.
 
 ## Problem Statement
 
@@ -12,7 +14,8 @@ ESPHome's current light component supports transitions with fixed endpoints but 
 - Halt ongoing transitions while preserving the current intermediate state
 - Provide intuitive "hold-and-release" dimming functionality expected by users
 
-This limitation forces users to implement complex workarounds using rapid-fire commands, resulting in poor user experience and increased system overhead.
+This limitation forces users to implement complex workarounds using rapid-fire commands, resulting in poor user
+experience and increased system overhead.
 
 ## Standards Compliance Gap
 
@@ -22,7 +25,8 @@ The move/stop modality is mandated by leading smart home protocols:
 
 - **Zigbee Level Control Cluster**: Defines `Move` and `Stop` commands as core functionality
 - **Matter Level Control Cluster**: Implements identical move/stop semantics
-- **Commercial Device Expectations**: Users expect ESPHome devices to behave like commercial smart switches that support hold-and-release dimming
+- **Commercial Device Expectations**: Users expect ESPHome devices to behave like commercial smart switches that support
+  hold-and-release dimming
 
 ### Current Workaround Limitations
 
@@ -339,9 +343,15 @@ The implementation leverages existing ESPHome infrastructure while adding minima
 
 ## Conclusion
 
-Implementing move/stop light control in ESPHome represents a strategic enhancement that addresses real user needs while ensuring compliance with modern smart home standards. The proposed implementation leverages existing infrastructure, minimizes complexity, and provides significant user experience improvements.
+Implementing move/stop light control in ESPHome represents a strategic enhancement that addresses real user needs while ensuring compliance with modern smart home standards
+.
+The proposed implementation leverages existing infrastructure, minimizes complexity, and provides significant user experience improvements.
 
-This feature transforms ESPHome from requiring complex workarounds for basic dimming functionality to providing commercial-grade light control out of the box. The investment in development will pay dividends through improved user satisfaction, reduced support burden, and enhanced ecosystem integration.
+This feature transforms ESPHome from requiring complex workarounds for basic dimming functionality to providing commercial-grade light control out of the box
+.
+The investment in development will pay dividends through improved user satisfaction, reduced support burden, and enhanced ecosystem integration.
 
-The path forward requires coordinated community effort, professional implementation, and strategic engagement with maintainers. With proper execution, this enhancement positions ESPHome as the premier platform for smart lighting applications while maintaining its core principles of simplicity and local control.
+The path forward requires coordinated community effort, professional implementation, and strategic engagement with maintainers
+.
+With proper execution, this enhancement positions ESPHome as the premier platform for smart lighting applications while maintaining its core principles of simplicity and local control.
 ````

@@ -1,6 +1,8 @@
 # Zigbee2MQTT Integration
 
-Great question! Integrating with Zigbee2MQTT (Z2M) is a critical part of making our Universal Smart Lighting Control truly widespread. The good news is that Z2M already exposes many of the underlying Zigbee capabilities we need, often more directly than ZHA in its current state.
+Great question! Integrating with Zigbee2MQTT (Z2M) is a critical part of making our Universal Smart Lighting Control truly widespread
+.
+The good news is that Z2M already exposes many of the underlying Zigbee capabilities we need, often more directly than ZHA in its current state.
 
 Here's how we'd implement support for Zigbee2MQTT devices, building on our existing plan:
 
@@ -8,20 +10,28 @@ ______________________________________________________________________
 
 ## Implementing Universal Lighting Control for Zigbee2MQTT Devices
 
-Zigbee2MQTT (Z2M) is a standalone application that bridges Zigbee networks to MQTT, and Home Assistant then integrates with Z2M via its MQTT integration and MQTT Discovery. This means our changes will primarily focus on how Home Assistant's MQTT Light integration consumes and exposes Z2M's capabilities.
+Zigbee2MQTT (Z2M) is a standalone application that bridges Zigbee networks to MQTT, and Home Assistant then integrates with Z2M via its MQTT integration and MQTT Discovery
+.
+This means our changes will primarily focus on how Home Assistant's MQTT Light integration consumes and exposes Z2M's capabilities.
 
 ### 1. Understanding Zigbee2MQTT's Capabilities for Dynamic Control
 
 My research confirms that Z2M is quite capable in this area:
 
-- **Native `move`/`stop`:** Z2M _does_ expose Zigbee's Level Control Cluster `Move` and `Stop` commands via specific MQTT payloads. For example, `{"brightness_move": 40}` to start dimming up at 40 units/second, and `{"brightness_move": 0}` to stop (or `{"color_temp_move": "stop"}`). This is excellent!
-- **Transitions:** Z2M supports `transition` parameters in its `set` payloads (e.g., `{"brightness": 100, "transition": 3}`).
-- **MQTT Discovery:** Z2M uses MQTT Discovery to announce devices and their capabilities to Home Assistant. This is how Home Assistant creates `light` entities for Z2M-connected lights.
-- **Controller Events:** Z2M publishes events from remotes/buttons to MQTT topics. Home Assistant can consume these via MQTT Device Triggers or Event entities.
+- **Native `move`/`stop`:** Z2M _does_ expose Zigbee's Level Control Cluster `Move` and `Stop` commands via specific
+  MQTT payloads. For example, `{"brightness_move": 40}` to start dimming up at 40 units/second, and
+  `{"brightness_move": 0}` to stop (or `{"color_temp_move": "stop"}`). This is excellent!
+- **Transitions:** Z2M supports `transition` parameters in its `set` payloads (e.g., `{"brightness": 100, "transition":
+  3}`).
+- **MQTT Discovery:** Z2M uses MQTT Discovery to announce devices and their capabilities to Home Assistant. This is how
+  Home Assistant creates `light` entities for Z2M-connected lights.
+- **Controller Events:** Z2M publishes events from remotes/buttons to MQTT topics. Home Assistant can consume these via
+  MQTT Device Triggers or Event entities.
 
 ### 2. Required Changes for Zigbee2MQTT Support
 
-The bulk of the work will be in the **Home Assistant MQTT Light integration** (`homeassistant/components/mqtt/light.py`) to properly map our new `dynamic_control` service parameters to Z2M's MQTT payloads and to consume Z2M's state.
+The bulk of the work will be in the **Home Assistant MQTT Light integration** (`homeassistant/components/mqtt/light.py`)
+to properly map our new `dynamic_control` service parameters to Z2M's MQTT payloads and to consume Z2M's state.
 
 This would fit into **Phase 3b: Integration-Specific Updates** of our overall plan, alongside ZHA and Z-Wave JS.
 
@@ -34,15 +44,19 @@ This would fit into **Phase 3b: Integration-Specific Updates** of our overall pl
     - `homeassistant/components/mqtt/models.py` (data models if needed)
 - **Logic to Implement:**
   1. **Feature Declaration:**
-     - During MQTT Discovery processing in `MqttLight.__init__()`, inspect the discovery payload for Z2M capability indicators:
+     - During MQTT Discovery processing in `MqttLight.__init__()`, inspect the discovery payload for Z2M capability
+       indicators:
        - Check if the device exposes `brightness_move`, `color_temp_move`, or similar commands in its discovery configuration
-       - Look for specific device model indicators that are known to support these commands (e.g., Zigbee 3.0 compliant devices)
+       - Look for specific device model indicators that are known to support these commands (e.g., Zigbee 3.0 compliant
+         devices)
        - Parse any Z2M-specific capability flags from the discovery payload
      - If native Z2M move/stop support is detected, add `LightEntityFeature.DYNAMIC_CONTROL` to `_attr_supported_features`
-     - Always declare `LightEntityFeature.TRANSITION_SIMULATED` and `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` for all dimmable Z2M lights as fallback capabilities
+     - Always declare `LightEntityFeature.TRANSITION_SIMULATED` and `LightEntityFeature.DYNAMIC_CONTROL_SIMULATED` for
+       all dimmable Z2M lights as fallback capabilities
   2. **MQTT Topic Configuration:**
      - Extend the existing topic configuration to handle dynamic control commands:
-       - Use the existing `command_topic` (typically `zigbee2mqtt/[device_friendly_name]/set`) for sending dynamic control payloads
+       - Use the existing `command_topic` (typically `zigbee2mqtt/[device_friendly_name]/set`) for sending dynamic
+         control payloads
        - Listen to the existing `state_topic` (typically `zigbee2mqtt/[device_friendly_name]`) for state feedback
        - No new topics required - leverage Z2M's existing MQTT structure
   3. **Mapping `dynamic_control` to MQTT Payloads:**
@@ -62,19 +76,25 @@ This would fit into **Phase 3b: Integration-Specific Updates** of our overall pl
          - For color temperature: `{"color_temp_step": step_size}` for up, `{"color_temp_step": -step_size}` for down
          - Publish to the device's `command_topic`
      - **Error Handling:** Implement proper error handling for MQTT publish failures and unsupported commands
-     - **Curve Handling:** Z2M does not natively support dimming curves (it sends linear Zigbee commands). The `curve` parameter in `dynamic_control` will be ignored by the MQTT integration; HA Core's `LightTransitionManager` will handle applying the curve by sending stepped linear commands if simulation is active.
+     - **Curve Handling:** Z2M does not natively support dimming curves (it sends linear Zigbee commands). The `curve`
+       parameter in `dynamic_control` will be ignored by the MQTT integration; HA Core's `LightTransitionManager`
+       will handle applying the curve by sending stepped linear commands if simulation is active.
 - **Testing:**
     - **Integration Tests:** Requires a running Z2M instance and a compatible Zigbee light with move/stop support.
-        - Call `light.turn_on` with `dynamic_control: {type: move, direction: up, speed: 40}`. Verify light dims smoothly and MQTT traffic shows `{"brightness_move": 40}`.
-        - Call `light.turn_on` with `dynamic_control: {type: stop}`. Verify light halts and MQTT traffic shows `{"brightness_move": 0}`.
+        - Call `light.turn_on` with `dynamic_control: {type: move, direction: up, speed: 40}`. Verify light dims
+          smoothly and MQTT traffic shows `{"brightness_move": 40}`.
+        - Call `light.turn_on` with `dynamic_control: {type: stop}`. Verify light halts and MQTT traffic shows
+          `{"brightness_move": 0}`.
         - Test color temperature controls with `dynamic_control` for `color_temp_move` commands.
         - Verify fallback to simulation when native commands are not supported.
     - **Manual Testing:** Use Developer Tools to send service calls and monitor both light behavior and state changes.
-    - **MQTT Traffic Monitoring:** Use tools like `mosquitto_sub` or Z2M's frontend to verify correct MQTT payloads are being sent.
+    - **MQTT Traffic Monitoring:** Use tools like `mosquitto_sub` or Z2M's frontend to verify correct MQTT payloads are
+      being sent.
 
 #### **PR Z2M.2: HA MQTT Light - Report `dynamic_state` from Z2M Devices**
 
-- **Goal:** Allow Home Assistant to accurately reflect the `dynamic_state` of Z2M-connected lights during dynamic operations.
+- **Goal:** Allow Home Assistant to accurately reflect the `dynamic_state` of Z2M-connected lights during dynamic
+  operations.
 - **Files to Modify:**
     - `homeassistant/components/mqtt/light.py`
 - **Logic to Implement:**
@@ -83,7 +103,8 @@ This would fit into **Phase 3b: Integration-Specific Updates** of our overall pl
      - Extend the `_state_message_received()` method to process additional state information
      - Monitor for rapid brightness changes that might indicate ongoing dynamic operations
   2. **Dynamic State Inference:**
-     - **Command-based State Tracking:** When Home Assistant sends a `brightness_move` command via `async_turn_on()`, immediately set the entity's `_attr_dynamic_state`:
+     - **Command-based State Tracking:** When Home Assistant sends a `brightness_move` command via `async_turn_on()`,
+       immediately set the entity's `_attr_dynamic_state`:
        - `{"brightness_move": positive_value}` → `moving_brightness_up`
        - `{"brightness_move": negative_value}` → `moving_brightness_down`
        - `{"brightness_move": 0}` → `idle`
@@ -91,34 +112,43 @@ This would fit into **Phase 3b: Integration-Specific Updates** of our overall pl
      - **State Validation from MQTT Messages:**
        - If Z2M provides direct feedback about ongoing move operations (device-dependent), parse and use that information
        - Monitor brightness value changes over time to validate that expected dynamic operations are actually occurring
-       - Implement timeout logic: if no brightness changes are detected within expected timeframes during a supposed "move" operation, reset `dynamic_state` to `idle`
+       - Implement timeout logic: if no brightness changes are detected within expected timeframes during a supposed
+         "move" operation, reset `dynamic_state` to `idle`
      - **Transition State Handling:**
        - For standard transitions (via `transition` parameter), Z2M typically handles these natively
-       - If Home Assistant Core's `LightTransitionManager` is simulating the transition, it will manage the `transitioning` state
-       - For Z2M native transitions, infer `transitioning` state when a `transition` parameter was included in the last command and brightness is still changing toward the target
+       - If Home Assistant Core's `LightTransitionManager` is simulating the transition, it will manage the
+         `transitioning` state
+       - For Z2M native transitions, infer `transitioning` state when a `transition` parameter was included in the last
+         command and brightness is still changing toward the target
   3. **State Update Mechanism:**
      - Add `_attr_dynamic_state` property to the `MqttLight` class
      - Ensure `async_write_ha_state()` is called whenever `dynamic_state` changes
      - Include the new state in the entity's state attributes for visibility in Developer Tools
   4. **Coordination with HA Core:**
-     - When `LightTransitionManager` is handling simulation, ensure the MQTT integration doesn't conflict with core state management
+     - When `LightTransitionManager` is handling simulation, ensure the MQTT integration doesn't conflict with core
+       state management
      - Provide clear handoff between native Z2M operations and HA Core simulation based on declared features
 - **Testing:**
-    - **Integration Tests:** Verify `dynamic_state` changes correctly in Home Assistant's Developer Tools → States when controlling Z2M lights via `dynamic_control` service calls.
-    - **State Accuracy Testing:** Confirm that `dynamic_state` accurately reflects actual light behavior and resets properly when operations complete.
+    - **Integration Tests:** Verify `dynamic_state` changes correctly in Home Assistant's Developer Tools → States when
+      controlling Z2M lights via `dynamic_control` service calls.
+    - **State Accuracy Testing:** Confirm that `dynamic_state` accurately reflects actual light behavior and resets
+      properly when operations complete.
     - **Timeout Testing:** Verify that stuck or failed move operations don't leave entities in incorrect dynamic states.
 
 #### **PR Z2M.3: HA MQTT - Standardized `event_data` for Z2M Controllers**
 
-- **Goal:** Ensure Z2M-connected remotes and switches emit standardized `event` entities with consistent `event_data` for the "Control Mapping" phase.
+- **Goal:** Ensure Z2M-connected remotes and switches emit standardized `event` entities with consistent `event_data`
+  for the "Control Mapping" phase.
 - **Files to Modify:**
     - `homeassistant/components/mqtt/device_automation.py` (MQTT device triggers)
     - `homeassistant/components/mqtt/event.py` (MQTT event entities)
     - `homeassistant/components/mqtt/discovery.py` (discovery payload processing)
 - **Logic to Implement (in HA's MQTT integration):**
   1. **Enhanced Discovery Processing:**
-     - When Z2M publishes device discovery payloads for controller devices (remotes, switches, rotary encoders), detect controller capabilities
-     - Look for Z2M-specific device classes like `remote_control`, `action_sensor`, or specific device models known to be controllers
+     - When Z2M publishes device discovery payloads for controller devices (remotes, switches, rotary encoders), detect
+       controller capabilities
+     - Look for Z2M-specific device classes like `remote_control`, `action_sensor`, or specific device models known to
+       be controllers
      - Automatically create appropriate `event` entities alongside any traditional sensor entities
   2. **Event Entity Creation and Management:**
      - For controller devices, create `event` entities with standardized naming (e.g., `event.ikea_tradfri_remote_action`)
@@ -141,15 +171,19 @@ This would fit into **Phase 3b: Integration-Specific Updates** of our overall pl
      - Provide migration path for users already using device triggers
      - Allow both event entities and device triggers to coexist
 - **Testing:**
-    - **Integration Tests:** Pair a Z2M-supported remote (e.g., IKEA TRÅDFRI, Philips Hue Dimmer, Aqara Cube). Trigger various button presses/holds/rotations. Verify that the corresponding `event` entity in Home Assistant fires with the correct, standardized `event_data`.
-    - **Device Compatibility Testing:** Test with multiple remote types to ensure broad compatibility and consistent event mapping.
+    - **Integration Tests:** Pair a Z2M-supported remote (e.g., IKEA TRÅDFRI, Philips Hue Dimmer, Aqara Cube). Trigger
+      various button presses/holds/rotations. Verify that the corresponding `event` entity in Home Assistant fires
+      with the correct, standardized `event_data`.
+    - **Device Compatibility Testing:** Test with multiple remote types to ensure broad compatibility and consistent
+      event mapping.
     - **Migration Testing:** Verify that existing device trigger automations continue to work alongside new event entities.
 
 ### 3. Implementation Considerations for MQTT Light Integration
 
 #### **MQTT Discovery Payload Extensions**
 
-To properly support the new dynamic control features, Z2M's discovery payloads should ideally include capability indicators. While this requires coordination with the Z2M project, Home Assistant can work with existing discovery information:
+To properly support the new dynamic control features, Z2M's discovery payloads should ideally include capability indicators
+. While this requires coordination with the Z2M project, Home Assistant can work with existing discovery information:
 
 ````json
 {
@@ -193,19 +227,23 @@ The MQTT Light integration updates must maintain full backwards compatibility:
 
 ### Summary for Z2M
 
-Zigbee2MQTT is exceptionally well-positioned to support our new `dynamic_control` API due to its direct exposure of Zigbee Level Control commands via clean MQTT interfaces. The implementation strategy focuses on:
+Zigbee2MQTT is exceptionally well-positioned to support our new `dynamic_control` API due to its direct exposure of Zigbee Level Control commands via clean MQTT interfaces
+. The implementation strategy focuses on:
 
 **Key Advantages:**
 
-- **Native Protocol Support:** Z2M already exposes `brightness_move`, `color_temp_move`, and `brightness_step` commands that map directly to our `dynamic_control` API
+- **Native Protocol Support:** Z2M already exposes `brightness_move`, `color_temp_move`, and `brightness_step` commands
+  that map directly to our `dynamic_control` API
 - **Mature MQTT Infrastructure:** Existing topic structure and discovery mechanisms provide a solid foundation
 - **Broad Device Compatibility:** Most modern Zigbee 3.0 devices support the underlying Level Control cluster commands
-- **Rich State Feedback:** Z2M provides comprehensive state information that can be leveraged for accurate `dynamic_state` reporting
+- **Rich State Feedback:** Z2M provides comprehensive state information that can be leveraged for accurate
+  `dynamic_state` reporting
 
 **Implementation Focus:**
 
 - **Minimal Code Changes:** Primary work is in the existing `homeassistant/components/mqtt/light.py` integration
-- **Discovery-based Feature Detection:** Automatically detect and enable dynamic control capabilities based on Z2M discovery payloads
+- **Discovery-based Feature Detection:** Automatically detect and enable dynamic control capabilities based on Z2M
+  discovery payloads
 - **Robust Fallback Mechanisms:** Seamless fallback to Home Assistant simulation for devices lacking native support
 - **Event Standardization:** Unified controller event handling for consistent automation experiences
 
@@ -216,5 +254,6 @@ Zigbee2MQTT is exceptionally well-positioned to support our new `dynamic_control
 - **Future-proof Design:** Architecture supports easy extension as Z2M adds new capabilities
 - **Community Alignment:** Implementation approach aligns with Z2M's existing patterns and conventions
 
-The primary work involves mapping Home Assistant's new service parameters to Z2M's existing MQTT command structure and ensuring proper state feedback. Standardizing controller events from Z2M devices will also be key for the "Control Mapping" UI phase of the project.
+The primary work involves mapping Home Assistant's new service parameters to Z2M's existing MQTT command structure and ensuring proper state feedback
+. Standardizing controller events from Z2M devices will also be key for the "Control Mapping" UI phase of the project.
 ````

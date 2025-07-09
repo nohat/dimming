@@ -1,6 +1,7 @@
 # Community Discussions on Light Control Limitations
 
-This document catalogs community discussions that highlight the need for improved light control in Home Assistant, focusing on hold-to-dim functionality, smooth transitions, and move/stop commands.
+This document catalogs community discussions that highlight the need for improved light control in Home Assistant,
+focusing on hold-to-dim functionality, smooth transitions, and move/stop commands.
 
 ## Hold-to-Dim and Continuous Control
 
@@ -11,7 +12,9 @@ This document catalogs community discussions that highlight the need for improve
 
 **User Quote:**
 
-> _"I've been thinking it would be somewhat complex, its just something that has a huge WAF and is how the dimming systems you buy usually work. I can't be the only one that has been wanting functionality like this in HA in some way?"_
+> _"I've been thinking it would be somewhat complex, its just something that has a huge WAF and is how the dimming
+    systems you buy usually work. I can't be the only one that has been wanting functionality like this in HA in some
+    way?"_
 
 **Issue:** Users want basic hold-to-dim functionality that mimics traditional dimmer switches.
 
@@ -22,7 +25,8 @@ This document catalogs community discussions that highlight the need for improve
 
 **User Quote:**
 
-> _"I have an Aqara Mini Switch that supports long press hold and long press release and i am trying to use the feature to dim or brighten the light in the WC."_
+> _"I have an Aqara Mini Switch that supports long press hold and long press release and i am trying to use the feature
+    to dim or brighten the light in the WC."_
 
 **Issue:** User struggles with Repeat Until in automation builder. Contributors recommend complex Node-RED flows or YAML automations with repeat-while sequences, but these solutions are complex and brittle.
 
@@ -33,15 +37,18 @@ This document catalogs community discussions that highlight the need for improve
 
 **User Quote:**
 
-> _"I always noticed when using the dimming arrows it only would do it in steps. No matter what if you hold down the down button, it will dim about 10% and stop."_
+> _"I always noticed when using the dimming arrows it only would do it in steps. No matter what if you hold down the
+    down button, it will dim about 10% and stop."_
 
 **Professional Installation Impact:**
 
-> _"I have actually sold a bunch of HA jobs coming up. This is one of them. I literally ripped out Lutron homeworks dimmers because I said this was the way better way."_
+> _"I have actually sold a bunch of HA jobs coming up. This is one of them. I literally ripped out Lutron homeworks
+    dimmers because I said this was the way better way."_
 
 **Frustration with Complexity:**
 
-> _"I have to do all those conditions and programming to get a dimmer to dim like a normal dimmer? ... I'd rather pay someone to put all 40 Lutron dimmers back in before doing that."_
+> _"I have to do all those conditions and programming to get a dimmer to dim like a normal dimmer? ... I'd rather pay
+    someone to put all 40 Lutron dimmers back in before doing that."_
 
 **Issue:** A professional installer is considering abandoning Home Assistant entirely due to lack of basic dimming functionality.
 
@@ -83,7 +90,8 @@ This document catalogs community discussions that highlight the need for improve
 
 **Workaround Impact:**
 
-> _"I gave it up to get smooth dimming with cluster command. I've just bind the dimmers directly to the zigbee groups which bypasses home assistant."_
+> _"I gave it up to get smooth dimming with cluster command. I've just bind the dimmers directly to the zigbee groups
+    which bypasses home assistant."_
 
 **Issue:** User bypasses Home Assistant entirely to achieve basic dimming functionality.
 
@@ -101,7 +109,9 @@ This document catalogs community discussions that highlight the need for improve
 
 **User Quote:**
 
-> _"I previously made two blueprints to dim lights using a pico remote that sends a stop and stop dimming command through Zigbee. Z2M Pico Remote and ZHA pico remote. I would like to make something similar for matter bulbs, but I haven't been able to figure out a way to send cluster commands to matter devices."_
+> _"I previously made two blueprints to dim lights using a pico remote that sends a stop and stop dimming command
+    through Zigbee. Z2M Pico Remote and ZHA pico remote. I would like to make something similar for matter bulbs, but I
+    haven't been able to figure out a way to send cluster commands to matter devices."_
 
 **Issue:** User successfully implemented Zigbee solutions but can't replicate for Matter devices.
 
