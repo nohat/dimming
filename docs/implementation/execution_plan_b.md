@@ -34,7 +34,7 @@ Before diving into specific PRs, here's the standard workflow for contributing t
     git clone https://github.com/YOUR_GITHUB_USERNAME/home-assistant.git
     git clone https://github.com/YOUR_GITHUB_USERNAME/esphome.git
 
-```text
+```
 
 3. **Set Up Development Environment:**
 
@@ -48,7 +48,7 @@ Before diving into specific PRs, here's the standard workflow for contributing t
 ```text
     git checkout -b feature/light-dynamic-control-esphome-move-stop
 
-```text
+```
 
 5. **Implement Changes:** Make your code modifications.
 
@@ -204,7 +204,7 @@ This part focuses entirely on the ESPHome firmware and its Native API.
           optional float step_size = 4; // for STEP type
           optional float duration = 5; // for MOVE/STEP, overrides speed if both
         }
-```text
+```
 
     2. **`LightCall` Structure:** Update `LightCall` to include a `DynamicControl` struct that mirrors the protobuf
        definition.
@@ -257,7 +257,7 @@ This part focuses entirely on the ESPHome firmware and its Native API.
           }
           optional DynamicState dynamic_state = 11; // Assign a new field number
         }
-```text
+```
 
     2. **`LightState` Tracking:** In `light_state.h`/`.cpp`, add an internal `DynamicState` variable to `LightState` and
        update it in `loop()` and `on_light_command` based on whether a transition or dynamic move is active.

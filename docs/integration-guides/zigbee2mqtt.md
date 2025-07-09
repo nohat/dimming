@@ -207,7 +207,7 @@ To properly support the new dynamic control features, Z2M's discovery payloads s
   "step_size_min": 1,
   "step_size_max": 254
 }
-```text
+```
 
 #### **Backwards Compatibility**
 

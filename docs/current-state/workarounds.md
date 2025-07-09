@@ -961,7 +961,7 @@ binary_sensor:
       - lambda: |
           id(dimming_active) = false;
           id(dimming_direction) = 0;
-```text
+```
 
 ### Rotary Encoder Implementations
 
@@ -1228,11 +1228,12 @@ void loop() {
 #### Professional Installation Concerns
 
 As noted in community discussions:
-> "I have actually sold a bunch of HA jobs coming up... I literally ripped out Lutron homeworks dimmers because I said
-    this was the way better way."
 
-> "I have to do all those conditions and programming to get a dimmer to dim like a normal dimmer? ... I'd rather pay
-    someone to put all 40 Lutron dimmers back in before doing that."
+> "I have actually sold a bunch of HA jobs coming up... I literally ripped out Lutron homeworks dimmers because I said this was the way better way."
+
+And:
+
+> "I have to do all those conditions and programming to get a dimmer to dim like a normal dimmer? ... I'd rather pay someone to put all 40 Lutron dimmers back in before doing that."
 
 This demonstrates the real-world impact on professional adoption and user satisfaction.
 
@@ -1258,9 +1259,9 @@ Common complaints across all solutions:
 
 ## Conclusion
 
-The extensive array of workarounds documented here demonstrates both the community's ingenuity and the fundamental gap in native light control capabilities
-.
-While solutions like ControllerX provide sophisticated functionality and community blueprints offer accessible alternatives, they all require significant expertise and resources to implement and maintain reliably.
+The extensive array of workarounds documented here demonstrates both the community's ingenuity and the fundamental gap
+in native light control capabilities. While solutions like ControllerX provide sophisticated functionality and
+community blueprints offer accessible alternatives, they all require significant expertise and resources to implement and maintain reliably.
 
 Key observations:
 
@@ -1272,12 +1273,9 @@ Key observations:
 6. **Blueprint ecosystem** provides middle ground but lacks standardization
 7. **Community fragmentation** across multiple solution approaches
 
-The blueprint ecosystem represents significant progress in making hold-to-dim functionality more accessible, with over 50+ community-contributed solutions covering major device types
-.
-However, even the most polished blueprints still suffer from the fundamental limitations of implementing continuous control through discrete automation steps.
-
-This analysis strongly supports the need for native move/stop functionality in both Home Assistant and ESPHome, as proposed in the strategy documents
-.
-The current workaround landscape creates barriers to adoption and forces users to choose between simplicity and functionality—a choice that shouldn't be necessary for basic lighting control.
-
-````
+The blueprint ecosystem represents significant progress in making hold-to-dim functionality more accessible, with over
+50+ community-contributed solutions covering major device types. However, even the most polished blueprints still
+suffer from the fundamental limitations of implementing continuous control through discrete automation steps. This
+analysis strongly supports the need for native move/stop functionality in both Home Assistant and ESPHome, as
+proposed in the strategy documents. The current workaround landscape creates barriers to adoption and forces users
+to choose between simplicity and functionality—a choice that shouldn't be necessary for basic lighting control.

@@ -20,7 +20,7 @@ make docs-check
 # Serve the site locally with live reload and auto-linting
 make docs-serve
 # OR: markdownlint-cli2 --fix **/*.md && mkdocs serve
-```text
+```
 
 The site will be available at `http://localhost:8000`
 
@@ -40,7 +40,7 @@ make fix-markdown
 
 # Install advanced pre-commit framework (optional)
 make install-pre-commit
-```text
+```
 
 **Available tools:**
 

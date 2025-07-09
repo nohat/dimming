@@ -55,7 +55,7 @@ class ControllerEventData(TypedDict):
     action_id: NotRequired[str]  # "button_1", "up", "down", etc.
     value: NotRequired[float]  # For rotary/slider controls
     duration: NotRequired[float]  # For timed actions
-```text
+```
 
 **Integration Updates:**
 

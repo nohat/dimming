@@ -93,7 +93,7 @@ This document identifies and analyzes the major obstacles that must be overcome 
 MAX_COMMAND_LATENCY = 50  # milliseconds
 MIN_UPDATE_FREQUENCY = 20  # Hz for smooth perception
 MAX_CONCURRENT_DIMMERS = 100  # Per HA instance
-```text
+```
 
 **Risk Level:** **HIGH** - Poor performance could degrade entire HA installation
 
@@ -121,7 +121,7 @@ class DynamicLightState:
     is_transitioning: bool
     simulation_active: bool
     last_command_time: datetime
-```text
+```
 
 **Synchronization Challenges:**
 
@@ -156,7 +156,7 @@ def perceptual_curve(value: float, curve_type: str) -> float:
         "custom_gamma": math.pow(value, 2.2)
     }
     return curves.get(curve_type, value)
-```text
+```
 
 **Implementation Challenges:**
 
@@ -200,7 +200,7 @@ def perceptual_curve(value: float, curve_type: str) -> float:
 TUYA_MAX_COMMANDS_PER_MINUTE = 30
 SMARTTHINGS_MAX_COMMANDS_PER_SECOND = 5
 ALEXA_SKILL_TIMEOUT = 8_000  # milliseconds
-```text
+```
 
 **Latency Issues:**
 
@@ -343,7 +343,7 @@ automation:
 ```text
 Total test scenarios = Protocols × Device Types × Manufacturers × Use Cases
                     = 4 × 10 × 20 × 50 = 40,000 potential combinations
-```text
+```
 
 **Practical Testing Strategy:**
 
@@ -397,7 +397,7 @@ scenarios = [
     "dynamic_control + manual_switch",
     "dynamic_control + automation_trigger"
 ]
-```text
+```
 
 **Risk Level:** **HIGH** - Integration conflicts could break existing user setups
 
@@ -518,5 +518,3 @@ The proposed architecture provides a path to overcome these challenges systemati
 
 The next phase should focus on detailed technical specifications and proof-of-concept implementations to validate the
 proposed solutions to these challenges.
-
-````

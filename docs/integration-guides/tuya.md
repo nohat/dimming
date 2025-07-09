@@ -1007,7 +1007,7 @@ async def _cloud_dimming_loop(self, direction: str, rate: int):
             break
 
         await asyncio.sleep(update_interval)
-```text
+```
 
 ### C. Integration-Specific Implementation Considerations
 
@@ -1042,7 +1042,7 @@ async def async_detect_dimming_capabilities(self):
             capabilities["custom_zigbee_commands"] = True
 
     return capabilities
-```text
+```
 
 #### 2. Graceful Fallback Mechanisms
 
@@ -1071,7 +1071,7 @@ async def async_start_dimming(self, direction: str, rate: int = 50):
     # Last resort: rapid incremental updates
     else:
         await self._start_dimming_incremental(direction, rate)
-```text
+```
 
 ## VII. Practical Home Assistant Implementation Examples
 

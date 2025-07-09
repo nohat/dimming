@@ -116,7 +116,7 @@ A new state attribute will be introduced on `light` entities to indicate their c
     "supported_features": 385 # Combination of flags
   }
 }
-```text
+```
 
 **`dynamic_state` Possible Values:**
 
@@ -193,8 +193,8 @@ We will implement and provide named references for the following common dimming 
     - **Standard:** Based on IEC 62386-102 (DALI) logarithmic dimming curve specifications. This curve scales 0.1% to
       100% output over 254 steps.
 
-    - **Formula (simplified approximation, actual DALI has specific lookup table):** `output = 100 * (log10(input * 99 +
-      1) / log10(100))` (for input 0-1, output 0-100%). Or `output = ((input * 254)**2) / 254` if device has 254
+    - **Formula (simplified approximation, actual DALI has specific lookup table):** `output = 100 \* (log10(input \* 99 +
+      1) / log10(100))` (for input 0-1, output 0-100%). Or `output = ((input \* 254)**2) / 254` if device has 254
       levels (approximate for DALI).
 
 - **`s_curve`**:
@@ -288,7 +288,7 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
 
     - **Example YAML:**
 
-```text
+    ```yaml
         light:
           - platform: ...
             name: "My Light"
@@ -308,7 +308,7 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
                     - [25.0, 5.0]
                     - [75.0, 60.0]
                     - [100.0, 100.0]
-```text
+    ```
 
     - **Considerations:** Ensure curve formulas are correctly normalized (0-1 input to 0-1 output). Handle edge cases
       for custom points (e.g., non-monotonic, out-of-range).
@@ -768,7 +768,7 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
 
     - **Example YAML:**
 
-```text
+```yaml
         binary_sensor:
           - platform: gpio
             pin: GPIO1
@@ -786,7 +786,7 @@ The `curve` parameter will primarily be handled by the **Home Assistant Core's `
                     id: my_light
                     dynamic_control:
                       type: stop
-```text
+```
 
 - **Interactions:** Improves local control responsiveness.
 
@@ -993,4 +993,3 @@ All proposed changes prioritize backward compatibility:
 
 This plan provides a detailed roadmap to deliver a significantly improved and unified lighting control experience in
 Home Assistant, making smart lights truly intelligent and responsive.
-````

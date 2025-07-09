@@ -60,7 +60,7 @@ class SuggestedMapping(TypedDict):
     light_action_template: Dict[str, Any]
     priority: int  # For ordering suggestions
     description: str  # User-friendly description
-```text
+```
 
 **Profile Storage:**
 
@@ -173,7 +173,7 @@ The "Configure Controls" wizard presents a complete suggested configuration:
     "scene_integration": true
   }
 }
-```text
+```
 
 #### Target Selection Intelligence
 
@@ -187,7 +187,7 @@ class TargetSelector:
         # Recent activity analysis
         # Compatibility checking
         # User preference learning
-```text
+```
 
 ### Suggestion Engine Components
 

@@ -13,7 +13,7 @@ The development server automatically lints and fixes markdown files:
 # Start dev server with auto-linting
 make docs-serve
 # OR use VS Code task: "Dev Server with Auto-lint"
-```text
+```
 
 ### Manual Commands
 
@@ -26,7 +26,7 @@ make fix-markdown
 
 # Run all CI checks locally
 make ci-check
-```text
+```
 
 ## 🔧 Configuration
 
@@ -97,7 +97,7 @@ npm install -g markdownlint-cli2
 # VS Code extensions (auto-installed)
 # - markdownlint
 # - markdown-all-in-one
-```text
+```
 
 ## 📋 Manual Operations
 
@@ -112,7 +112,7 @@ markdownlint-cli2 docs/architecture/**/*.md
 
 # Check with verbose output
 markdownlint-cli2 --verbose **/*.md
-```text
+```
 
 ### Fix Specific Issues
 
@@ -125,7 +125,7 @@ markdownlint-cli2 --fix docs/index.md
 
 # Fix and then check
 markdownlint-cli2 --fix **/*.md && markdownlint-cli2 **/*.md
-```text
+```
 
 ### Custom Configuration
 
@@ -141,7 +141,7 @@ To modify linting rules, edit `.markdownlint.json`:
     "allowed_elements": ["br", "img"] // Allow specific HTML
   }
 }
-```text
+```
 
 ## 🚨 Troubleshooting
 
@@ -161,7 +161,7 @@ To modify linting rules, edit `.markdownlint.json`:
 # Reinstall hooks
 pre-commit clean
 pre-commit install
-```text
+```
 
 **Issue**: Line length errors on long URLs
 **Solution**: URLs in code blocks are automatically ignored, or add to `.markdownlintignore`
@@ -173,7 +173,7 @@ pre-commit install
 # Auto-fix and rebuild
 make fix-markdown
 make docs-build
-```text
+```
 
 ### Override Specific Rules
 
@@ -186,7 +186,7 @@ site/**
 
 # Ignore specific problematic files
 docs/legacy-content.md
-```text
+```
 
 ## 📊 Continuous Integration
 
@@ -207,7 +207,7 @@ make ci-check
 
 # Run pre-commit on all files
 pre-commit run --all-files
-```text
+```
 
 ## 🎯 Best Practices
 

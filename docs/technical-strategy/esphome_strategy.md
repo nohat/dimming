@@ -149,7 +149,7 @@ light:
     on_turn_on:
       - lambda: |
           id(current_brightness) = id(my_light).current_values.get_brightness();
-```text
+```
 
 Proposed simple solution:
 
@@ -165,7 +165,7 @@ binary_sensor:
       - light.move_brightness:
           id: my_light
           direction: STOP
-```text
+```
 
 ## Business Case
 
@@ -354,4 +354,3 @@ The investment in development will pay dividends through improved user satisfact
 The path forward requires coordinated community effort, professional implementation, and strategic engagement with maintainers
 .
 With proper execution, this enhancement positions ESPHome as the premier platform for smart lighting applications while maintaining its core principles of simplicity and local control.
-````

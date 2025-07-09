@@ -13,7 +13,7 @@ make docs-check
 
 # Serve docs locally for development
 make docs-serve
-```text
+```
 
 ### 2. Install Git Hooks (Recommended)
 
@@ -23,7 +23,7 @@ make install-hooks
 
 # Or install advanced pre-commit hooks
 make install-pre-commit
-```text
+```
 
 ### 3. Run Full Validation
 
@@ -33,7 +33,7 @@ make install-pre-commit
 
 # Or use make target
 make ci-check
-```text
+```
 
 ## Available Tools
 
@@ -130,7 +130,7 @@ make install-hooks
 
 # Check Git configuration
 git config core.hooksPath
-```text
+```
 
 ### Pre-commit Issues
 
@@ -141,7 +141,7 @@ pre-commit install
 
 # Run manually
 pre-commit run --all-files
-```text
+```
 
 ### MkDocs Build Errors
 
@@ -151,4 +151,4 @@ mkdocs build --strict --verbose
 
 # Check specific warnings
 mkdocs build --clean
-```text
+```
