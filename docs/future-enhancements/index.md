@@ -5,11 +5,13 @@ This section explores potential future improvements and advanced features that c
 ## 📋 Pages in this Section
 
 ### [Control Mapping](control_mapping.md)
+
 Advanced control mapping features for customized dimming behaviors and device-specific optimizations.
 
 ### [Auto-Detected Controller Defaults](defaults.md)
+
 Intelligent default configuration system that automatically detects and configures optimal settings for different controller types.
 
----
+______________________________________________________________________
 
-*These features represent the next evolution beyond the core implementation - consider them roadmap items for future development.*
+_These features represent the next evolution beyond the core implementation - consider them roadmap items for future development._

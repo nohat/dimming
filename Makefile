@@ -1,4 +1,4 @@
-.PHONY: help docs-check docs-serve docs-build docs-clean install-hooks
+.PHONY: help docs-check docs-serve docs-build docs-clean install-hooks lint-markdown fix-markdown
 
 help: ## Show this help message
 	@echo "Available targets:"
@@ -22,6 +22,14 @@ docs-clean: ## Clean built documentation
 	@echo "🧹 Cleaning documentation build..."
 	@rm -rf site/
 
+lint-markdown: ## Lint markdown files
+	@echo "🔍 Linting markdown files..."
+	@./scripts/lint-markdown.sh check
+
+fix-markdown: ## Fix markdown linting issues automatically
+	@echo "🔧 Auto-fixing markdown files..."
+	@./scripts/lint-markdown.sh fix
+
 install-hooks: ## Install Git hooks for documentation validation
 	@echo "⚙️  Installing Git hooks..."
 	@git config core.hooksPath .githooks
@@ -33,4 +41,4 @@ install-pre-commit: ## Install pre-commit hooks
 	@pre-commit install
 	@echo "✅ Pre-commit hooks installed!"
 
-ci-check: docs-check ## Run all CI checks locally
+ci-check: lint-markdown docs-check ## Run all CI checks locally

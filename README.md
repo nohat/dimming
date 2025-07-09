@@ -14,38 +14,45 @@ To work with the documentation locally:
 # Install dependencies
 pip install -r requirements.txt
 
-# Quick validation check
+# Quick validation and markdown linting
 make docs-check
 
-# Serve the site locally with live reload
+# Serve the site locally with live reload and auto-linting
 make docs-serve
-# OR: mkdocs serve
-```
+# OR: markdownlint-cli2 --fix **/*.md && mkdocs serve
+```text
 
 The site will be available at `http://localhost:8000`
 
-### �️ Documentation Validation
+### ⚙️ Documentation Validation & Linting
 
-This project includes multiple layers of protection to prevent broken documentation:
+This project includes comprehensive markdown linting and validation:
 
 ```bash
 # Install Git hooks (prevents committing broken docs)
 make install-hooks
+
+# Lint and auto-fix markdown files
+make fix-markdown
 
 # Run comprehensive validation
 ./scripts/validate-docs.sh
 
 # Install advanced pre-commit framework (optional)
 make install-pre-commit
-```
+```text
 
-**Available validation tools:**
-- **Git hooks** - Automatic validation before commits
-- **Make targets** - Quick validation commands (`make docs-check`)
-- **GitHub Actions** - CI validation on PRs and deployment
+**Available tools:**
+
+- **Markdown Linting** - Automatic formatting and consistency checks
+- **Auto-fixing** - VS Code integration fixes issues on save
+- **Git hooks** - Prevents committing invalid markdown or broken docs
+- **Make targets** - Quick commands (`make lint-markdown`, `make fix-markdown`)
+- **GitHub Actions** - CI validation and auto-fix suggestions
 - **Pre-commit framework** - Advanced formatting and validation
 
-See [`DOC_VALIDATION.md`](DOC_VALIDATION.md) for detailed setup instructions.
+See [`MARKDOWN_LINTING.md`](MARKDOWN_LINTING.md) for detailed markdown linting setup and
+[`DOC_VALIDATION.md`](DOC_VALIDATION.md) for comprehensive validation instructions.
 
 ## 🔄 Automatic Deployment
 

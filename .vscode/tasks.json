@@ -9,6 +9,79 @@
 			"isBackground": true,
 			"group": "build",
 			"problemMatcher": []
+		},
+		{
+			"type": "shell",
+			"label": "Lint Markdown",
+			"command": "markdownlint-cli2",
+			"args": ["**/*.md"],
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			},
+			"problemMatcher": {
+				"owner": "markdownlint",
+				"fileLocation": "relative",
+				"pattern": {
+					"regexp": "^(.*):(\\d+):(\\d+)\\s+(MD\\d+)/(.*)\\s+(.*)$",
+					"file": 1,
+					"line": 2,
+					"column": 3,
+					"code": 4,
+					"severity": 5,
+					"message": 6
+				}
+			}
+		},
+		{
+			"type": "shell",
+			"label": "Fix Markdown",
+			"command": "markdownlint-cli2",
+			"args": ["--fix", "**/*.md"],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			},
+			"problemMatcher": []
+		},
+		{
+			"type": "shell",
+			"label": "Lint and Fix Markdown",
+			"dependsOrder": "sequence",
+			"dependsOn": ["Fix Markdown", "Lint Markdown"],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"type": "shell",
+			"label": "Dev Server with Auto-lint",
+			"command": "bash",
+			"args": [
+				"-c",
+				"echo '🚀 Starting development server with auto-linting...' && markdownlint-cli2 --fix **/*.md && mkdocs serve"
+			],
+			"group": "build",
+			"isBackground": true,
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"clear": false,
+				"showReuseMessage": true
+			},
+			"problemMatcher": []
 		}
 	]
 }

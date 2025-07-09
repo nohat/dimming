@@ -7,8 +7,9 @@ This document proposes implementing native "move/stop" light control functionali
 ## Problem Statement
 
 ESPHome's current light component supports transitions with fixed endpoints but lacks the ability to:
+
 - Start continuous brightness/color adjustments without predetermined targets
-- Halt ongoing transitions while preserving the current intermediate state  
+- Halt ongoing transitions while preserving the current intermediate state
 - Provide intuitive "hold-and-release" dimming functionality expected by users
 
 This limitation forces users to implement complex workarounds using rapid-fire commands, resulting in poor user experience and increased system overhead.
@@ -28,15 +29,16 @@ The move/stop modality is mandated by leading smart home protocols:
 Existing approaches to achieve move/stop functionality have significant drawbacks:
 
 1. **Complex YAML Configurations**: Require intricate logic with globals, intervals, and lambda functions
-2. **Network Overhead**: Multiple rapid commands create unnecessary traffic and latency
-3. **Unreliable Behavior**: Timing-dependent workarounds are prone to edge cases and failures
-4. **Poor User Experience**: Jerky, unresponsive dimming compared to commercial devices
+1. **Network Overhead**: Multiple rapid commands create unnecessary traffic and latency
+1. **Unreliable Behavior**: Timing-dependent workarounds are prone to edge cases and failures
+1. **Poor User Experience**: Jerky, unresponsive dimming compared to commercial devices
 
 ## Technical Analysis
 
 ### Current ESPHome Architecture
 
 The existing `LightState` class provides:
+
 - `start_transition_()` for predetermined endpoint transitions
 - `stop_effect_()` for halting light effects
 - No mechanism for continuous adjustment or mid-transition halting
@@ -46,13 +48,13 @@ The existing `LightState` class provides:
 To support move/stop functionality, ESPHome needs:
 
 1. **Enhanced State Tracking**: Monitor current interpolated values during transitions
-2. **Continuous Update Loop**: Support ongoing brightness/color adjustments without fixed endpoints
-3. **Immediate Halt Capability**: Stop transitions and preserve current state
-4. **Hardware Abstraction**: Consistent behavior across PWM, addressable LEDs, and other light types
+1. **Continuous Update Loop**: Support ongoing brightness/color adjustments without fixed endpoints
+1. **Immediate Halt Capability**: Stop transitions and preserve current state
+1. **Hardware Abstraction**: Consistent behavior across PWM, addressable LEDs, and other light types
 
 ### Proposed API Design
 
-```yaml
+````yaml
 # New light actions
 light.move_brightness:
   id: my_light
@@ -63,11 +65,12 @@ light.move_color_temperature:
   id: my_light
   direction: WARMER  # WARMER, COOLER, STOP
   speed: 50K_per_second
-```
+```text
 
 ### Simplified User Configuration
 
 Current complex workaround:
+
 ```yaml
 # Current ESPHome implementation requires complex workaround
 globals:
@@ -102,7 +105,7 @@ interval:
 
 binary_sensor:
   - platform: gpio
-    pin: 
+    pin:
       number: GPIO12
       inverted: true
       mode:
@@ -119,7 +122,7 @@ binary_sensor:
           id(dimming_direction) = 0;
 
   - platform: gpio
-    pin: 
+    pin:
       number: GPIO13
       inverted: true
       mode:
@@ -142,9 +145,10 @@ light:
     on_turn_on:
       - lambda: |
           id(current_brightness) = id(my_light).current_values.get_brightness();
-```
+```text
 
 Proposed simple solution:
+
 ```yaml
 binary_sensor:
   - platform: gpio
@@ -157,7 +161,7 @@ binary_sensor:
       - light.move_brightness:
           id: my_light
           direction: STOP
-```
+```text
 
 ## Business Case
 
@@ -218,20 +222,24 @@ The implementation leverages existing ESPHome infrastructure while adding minima
 ### Maintainer Objections and Responses
 
 **Complexity Concerns**:
-- *Response*: Implementation builds on existing transition infrastructure with minimal new code paths
-- *Mitigation*: Modular design allows optional compilation and gradual rollout
+
+- _Response_: Implementation builds on existing transition infrastructure with minimal new code paths
+- _Mitigation_: Modular design allows optional compilation and gradual rollout
 
 **Resource Usage**:
-- *Response*: Efficient implementation reuses existing mechanisms with negligible overhead
-- *Evidence*: Prototype measurements showing <1KB memory increase and minimal CPU impact
+
+- _Response_: Efficient implementation reuses existing mechanisms with negligible overhead
+- _Evidence_: Prototype measurements showing <1KB memory increase and minimal CPU impact
 
 **Design Philosophy**:
-- *Response*: Feature aligns with ESPHome's local-first approach and user empowerment
-- *Context*: Standards compliance is essential for modern smart home integration
+
+- _Response_: Feature aligns with ESPHome's local-first approach and user empowerment
+- _Context_: Standards compliance is essential for modern smart home integration
 
 **Maintenance Burden**:
-- *Response*: Clear API design and comprehensive testing reduce long-term support costs
-- *Commitment*: Community willingness to provide ongoing maintenance and bug fixes
+
+- _Response_: Clear API design and comprehensive testing reduce long-term support costs
+- _Commitment_: Community willingness to provide ongoing maintenance and bug fixes
 
 ### Community Building Strategy
 
@@ -243,24 +251,28 @@ The implementation leverages existing ESPHome infrastructure while adding minima
 ## Implementation Roadmap
 
 ### Phase 1: Foundation (Month 1-2)
+
 - [ ] Create detailed technical specification
 - [ ] Develop proof-of-concept implementation
 - [ ] Performance testing and optimization
 - [ ] Community feedback collection
 
 ### Phase 2: Core Implementation (Month 3-4)
+
 - [ ] Implement core `MoveAction` framework
 - [ ] Add YAML action support
 - [ ] Hardware platform testing
 - [ ] Unit and integration test development
 
 ### Phase 3: Integration (Month 5-6)
+
 - [ ] Home Assistant service integration
 - [ ] Documentation and examples
 - [ ] Community testing and feedback
 - [ ] Bug fixes and refinements
 
 ### Phase 4: Release (Month 7)
+
 - [ ] Final testing and validation
 - [ ] Official ESPHome integration
 - [ ] Documentation publication
@@ -271,47 +283,55 @@ The implementation leverages existing ESPHome infrastructure while adding minima
 ### Technical Risks
 
 **Hardware Compatibility Issues**:
-- *Risk*: Different light platforms may not support smooth continuous updates
-- *Mitigation*: Comprehensive testing across all supported hardware types
-- *Fallback*: Graceful degradation to discrete step adjustments where needed
+
+- _Risk_: Different light platforms may not support smooth continuous updates
+- _Mitigation_: Comprehensive testing across all supported hardware types
+- _Fallback_: Graceful degradation to discrete step adjustments where needed
 
 **Performance Impact**:
-- *Risk*: Continuous updates may strain ESP device resources
-- *Mitigation*: Configurable update rates and automatic optimization
-- *Monitoring*: Runtime performance metrics and user feedback
+
+- _Risk_: Continuous updates may strain ESP device resources
+- _Mitigation_: Configurable update rates and automatic optimization
+- _Monitoring_: Runtime performance metrics and user feedback
 
 **Integration Complexity**:
-- *Risk*: Complex interactions with existing transition system
-- *Mitigation*: Careful state management and comprehensive testing
-- *Validation*: Automated regression testing for existing functionality
+
+- _Risk_: Complex interactions with existing transition system
+- _Mitigation_: Careful state management and comprehensive testing
+- _Validation_: Automated regression testing for existing functionality
 
 ### Project Risks
 
 **Community Adoption**:
-- *Risk*: Low user interest or uptake
-- *Mitigation*: Strong use case documentation and examples
-- *Validation*: Pre-implementation community survey and feedback
+
+- _Risk_: Low user interest or uptake
+- _Mitigation_: Strong use case documentation and examples
+- _Validation_: Pre-implementation community survey and feedback
 
 **Maintainer Acceptance**:
-- *Risk*: Rejection by ESPHome core team
-- *Mitigation*: Early engagement, professional proposal, and technical demonstration
-- *Alternative*: Community fork or addon approach if necessary
+
+- _Risk_: Rejection by ESPHome core team
+- _Mitigation_: Early engagement, professional proposal, and technical demonstration
+- _Alternative_: Community fork or addon approach if necessary
 
 ## Success Metrics
 
 ### Technical Metrics
+
 - Implementation adds <2KB to firmware size
 - Move/stop operations respond within 50ms
 - Zero regression in existing transition functionality
 - 100% hardware platform compatibility
 
 ### User Experience Metrics
+
 - Simplified YAML configurations (5+ lines reduced to 2-3 lines)
 - Community adoption in 25%+ of new light projects
 - Positive feedback on user experience improvements
 - Reduced support requests for dimming workarounds
 
 ### Ecosystem Impact
+
 - Native Home Assistant integration within 6 months
 - Matter/Zigbee integration examples and documentation
 - Commercial-grade dimming experience parity
@@ -324,3 +344,4 @@ Implementing move/stop light control in ESPHome represents a strategic enhanceme
 This feature transforms ESPHome from requiring complex workarounds for basic dimming functionality to providing commercial-grade light control out of the box. The investment in development will pay dividends through improved user satisfaction, reduced support burden, and enhanced ecosystem integration.
 
 The path forward requires coordinated community effort, professional implementation, and strategic engagement with maintainers. With proper execution, this enhancement positions ESPHome as the premier platform for smart lighting applications while maintaining its core principles of simplicity and local control.
+````

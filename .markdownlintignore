@@ -1,0 +1,11 @@
+# Markdownlint ignore file
+# See https://github.com/DavidAnson/markdownlint#markdownlintignore
+
+# Ignore auto-generated files
+site/
+__pycache__/
+*.pyc
+
+# Ignore template or auto-generated content that may not follow strict markdown rules
+# Add specific files here if needed, e.g.:
+# docs/some-generated-file.md

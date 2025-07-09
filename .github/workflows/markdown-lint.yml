@@ -1,0 +1,61 @@
+name: Markdown Linting
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '**/*.md'
+      - '.markdownlint.json'
+      - '.markdownlintignore'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**/*.md'
+      - '.markdownlint.json'
+      - '.markdownlintignore'
+
+jobs:
+  markdown-lint:
+    runs-on: ubuntu-latest
+    name: Lint Markdown Files
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install markdownlint-cli2
+      run: npm install -g markdownlint-cli2
+      
+    - name: Run markdownlint
+      run: |
+        echo "::group::Markdown Linting Results"
+        markdownlint-cli2 "**/*.md" || {
+          echo "::error::Markdown linting failed"
+          echo "::notice::Run 'markdownlint-cli2 --fix **/*.md' to auto-fix issues"
+          exit 1
+        }
+        echo "::endgroup::"
+        echo "✅ All markdown files passed linting!"
+        
+    - name: Check for auto-fixable issues
+      if: failure()
+      run: |
+        echo "::group::Auto-fix attempt"
+        markdownlint-cli2 --fix "**/*.md" || true
+        echo "::endgroup::"
+        
+        if git diff --quiet; then
+          echo "::notice::No auto-fixable issues found"
+        else
+          echo "::warning::Auto-fixable issues detected"
+          echo "The following changes would fix markdown issues:"
+          git --no-pager diff --color=always
+          echo ""
+          echo "To apply these fixes locally, run:"
+          echo "  markdownlint-cli2 --fix **/*.md"
+        fi

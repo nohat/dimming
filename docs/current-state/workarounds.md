@@ -5,12 +5,12 @@ This document provides a comprehensive catalog of workarounds currently used in 
 ## Table of Contents
 
 1. [ControllerX Framework](#controllerx-framework)
-2. [Home Assistant Native Workarounds](#home-assistant-native-workarounds)
-3. [Blueprint-Based Solutions](#blueprint-based-solutions)
-4. [ESPHome Workarounds](#esphome-workarounds)
-5. [Protocol-Specific Solutions](#protocol-specific-solutions)
-6. [Third-Party Solutions](#third-party-solutions)
-7. [Analysis and Limitations](#analysis-and-limitations)
+1. [Home Assistant Native Workarounds](#home-assistant-native-workarounds)
+1. [Blueprint-Based Solutions](#blueprint-based-solutions)
+1. [ESPHome Workarounds](#esphome-workarounds)
+1. [Protocol-Specific Solutions](#protocol-specific-solutions)
+1. [Third-Party Solutions](#third-party-solutions)
+1. [Analysis and Limitations](#analysis-and-limitations)
 
 ## ControllerX Framework
 
@@ -19,12 +19,14 @@ ControllerX represents the most sophisticated workaround for light control limit
 ### Architecture Overview
 
 **Core Components:**
+
 - `LightController`: Main class handling standard Home Assistant light entities
 - `Z2MLightController`: Specialized controller using native Zigbee2MQTT commands
 - `ReleaseHoldController`: Base class providing hold/release functionality
 - Device-specific controllers for 50+ switch/remote types
 
 **Key Features:**
+
 - Native hold/release action mapping
 - Configurable stepper modes (stop, loop, bounce)
 - Smooth power-on functionality
@@ -35,7 +37,7 @@ ControllerX represents the most sophisticated workaround for light control limit
 
 #### Standard Light Controller Implementation
 
-```python
+````python
 # Core hold functionality in LightController
 async def _hold(
     self,
@@ -47,10 +49,10 @@ async def _hold(
     # Validates attribute and direction
     attribute = self.get_option(attribute, LightController.ATTRIBUTES_LIST, "`hold` action")
     direction = self.get_option(direction, [StepperDir.UP, StepperDir.DOWN, StepperDir.TOGGLE], "`hold` action")
-    
+
     # Creates stepper for continuous adjustment
     stepper = self.get_stepper(attribute, steps or self.automatic_steps, mode, tag="hold")
-    
+
     # Starts continuous loop until release
     await super().hold(attribute, direction, stepper)
 
@@ -61,7 +63,7 @@ async def hold_loop(self, attribute: str, direction: str, stepper: Stepper) -> b
         self.value_attribute, attribute, direction, stepper,
         extra_attributes=extra_attributes
     )
-```
+```text
 
 #### Z2M Light Controller Implementation
 
@@ -84,13 +86,14 @@ async def release(self) -> None:
     # Sends native Zigbee stop command
     await self._mqtt_call({f"{self.hold_attribute}_move": "stop"})
     self.hold_attribute = None
-```
+```text
 
 ### Device-Specific Mappings
 
 ControllerX includes mappings for numerous devices that demonstrate the complexity of implementing hold-to-release across different hardware:
 
 #### IKEA TRADFRI (E1744) Example
+
 ```python
 def get_zha_actions_mapping(self) -> DefaultActionsMapping:
     return {
@@ -101,9 +104,10 @@ def get_zha_actions_mapping(self) -> DefaultActionsMapping:
         "step_0_1_0_0_0": Light.ON_FULL_BRIGHTNESS,
         "step_1_1_0_0_0": Light.ON_MIN_BRIGHTNESS,
     }
-```
+```text
 
 #### Philips Hue Dimmer Example
+
 ```python
 def get_z2m_actions_mapping(self) -> DefaultActionsMapping:
     return {
@@ -120,11 +124,12 @@ def get_z2m_actions_mapping(self) -> DefaultActionsMapping:
         "off_hold": Light.HOLD_COLOR_DOWN,
         "off_hold_release": Light.RELEASE,
     }
-```
+```text
 
 ### Configuration Examples
 
 #### Basic Hold-to-Dim Setup
+
 ```yaml
 # AppDaemon apps.yaml
 living_room_dimmer:
@@ -139,9 +144,10 @@ living_room_dimmer:
     - hold_brightness_up
     - hold_brightness_down
     - release
-```
+```text
 
 #### Advanced Configuration with Custom Timing
+
 ```yaml
 # Complex ControllerX configuration
 advanced_dimmer:
@@ -163,7 +169,7 @@ advanced_dimmer:
       mode: stop
     "button_1_release":
       action: release
-```
+```text
 
 ### ControllerX Limitations
 
@@ -181,6 +187,7 @@ Despite its sophistication, ControllerX has several limitations:
 ### Automation-Based Solutions
 
 #### Basic Hold-to-Dim Automation
+
 ```yaml
 # Simple hold-to-dim using repeat loops
 automation:
@@ -202,9 +209,10 @@ automation:
               data:
                 brightness_step_pct: 5
             - delay: "00:00:00.2"
-```
+```text
 
 #### Smart Home Junkie Method
+
 Referenced in YouTube tutorial, uses complex while loops with trigger IDs:
 
 ```yaml
@@ -263,13 +271,14 @@ automation:
               - service: input_boolean.turn_off
                 target:
                   entity_id: input_boolean.dimming_active
-```
+```text
 
 ### Node-RED Solutions
 
 Node-RED provides visual flow-based dimming solutions:
 
 #### Basic Flow Structure
+
 ```json
 [
   {
@@ -286,18 +295,20 @@ Node-RED provides visual flow-based dimming solutions:
   },
   {
     "id": "release_stop",
-    "type": "function", 
+    "type": "function",
     "code": "// clearInterval logic"
   }
 ]
-```
+```text
 
 **Advantages:**
+
 - Visual programming interface
 - Built-in timing and loop controls
 - Good debugging capabilities
 
 **Disadvantages:**
+
 - Requires Node-RED installation
 - Still subject to network timing issues
 - Complex flows for advanced functionality
@@ -330,7 +341,7 @@ light:
           - service: switch.turn_off
             target:
               entity_id: switch.actual_light
-```
+```cpp
 
 ## Blueprint-Based Solutions
 
@@ -339,9 +350,11 @@ The Home Assistant Blueprint Exchange hosts numerous community-contributed solut
 ### IKEA Dimmer Solutions
 
 #### Zigbee2MQTT IKEA TRADFRI Blueprint
+
 One of the most popular blueprints handles IKEA TRADFRI wireless dimmers with comprehensive hold-to-dim functionality:
 
 **Features:**
+
 - Short press: Turn on/off or brightness step
 - Hold: Continuous dimming with configurable speed
 - Double press: Color temperature adjustment
@@ -409,12 +422,14 @@ automation:
                       brightness_step_pct: 5
                   - delay:
                       milliseconds: "{% raw %}{{ dim_speed }}{% endraw %}"
-```
+```cpp
 
 #### ZHA IKEA TRADFRI Blueprint
+
 Alternative blueprint for ZHA integration users:
 
 **Unique Features:**
+
 - Native ZHA device trigger handling
 - Configurable step sizes for fine control
 - Color loop support for RGB lights
@@ -456,14 +471,16 @@ action:
                   data:
                     brightness_step_pct: !input step_size
                 - delay: "{% raw %}{{ states('input_number.dim_delay') | int / 1000 }}{% endraw %}"
-```
+```text
 
 ### Philips Hue Dimmer Blueprints
 
 #### Advanced Hue Dimmer Switch Blueprint
+
 Comprehensive blueprint supporting all four buttons with multiple functions:
 
 **Features:**
+
 - Hold-to-dim with variable speed curves
 - Color temperature stepping
 - Scene cycling
@@ -500,7 +517,7 @@ action:
                       {{ [current + step, 500] | min }}{% endraw %}
                 - delay:
                     milliseconds: "{% raw %}{{ hold_delay }}{% endraw %}"
-      
+
       # Up button hold - brightness increase with acceleration
       - conditions:
           - condition: template
@@ -521,14 +538,16 @@ action:
                       {{ [base_step * (1 + acceleration), 20] | min }}{% endraw %}
                 - delay:
                     milliseconds: "{% raw %}{{ [hold_delay - (repeat.index * 10), 50] | max }}{% endraw %}"
-```
+```text
 
 ### Generic Device Blueprints
 
 #### Universal Hold-to-Dim Blueprint
+
 Device-agnostic blueprint that works with any button entity providing hold/release events:
 
 **Key Innovation:**
+
 - Template-based device detection
 - Configurable dimming curves (linear, exponential, logarithmic)
 - Multi-light group support with individual customization
@@ -561,7 +580,7 @@ blueprint:
 variables:
   curve_type: !input dimming_curve
   current_brightness: "{% raw %}{{ state_attr(light_entity, 'brightness') | int(0) }}{% endraw %}"
-  
+
 action:
   - repeat:
       while:
@@ -587,14 +606,16 @@ action:
               {% else %}
                 {{ [current + step * 3, 255] | min }}
               {% endif %}{% endraw %}
-```
+```text
 
 ### Specialized Use Case Blueprints
 
 #### Theater/Cinema Room Blueprint
+
 Specialized blueprint for entertainment room lighting with hold-to-dim:
 
 **Features:**
+
 - Ultra-slow dimming for movie watching
 - Red light preservation mode
 - Automatic scene restoration
@@ -622,12 +643,14 @@ action:
             transition: "{% raw %}{{ dim_speed / 1000 }}{% endraw %}"
         - delay:
             milliseconds: "{% raw %}{{ dim_speed }}{% endraw %}"
-```
+```cpp
 
 #### Circadian Rhythm Blueprint
+
 Blueprint integrating hold-to-dim with circadian lighting principles:
 
 **Features:**
+
 - Time-based color temperature adjustment during dimming
 - Brightness limits based on time of day
 - Sleep mode integration
@@ -659,11 +682,12 @@ action:
           data:
             brightness_step_pct: "{% raw %}{{ 2 if is_night else 5 }}{% endraw %}"
             color_temp: "{% raw %}{{ color_temp }}{% endraw %}"
-```
+```text
 
 ### Multi-Protocol Support Blueprints
 
 #### Protocol-Agnostic Switch Blueprint
+
 Advanced blueprint supporting ZHA, Z2M, and deCONZ with unified configuration:
 
 ```yaml
@@ -682,7 +706,7 @@ variables:
     {% else %}
       unknown
     {% endif %}{% endraw %}
-  
+
   hold_action: >
     {% raw %}{%- if protocol == "zha" -%}
       {{ trigger.event.data.command if trigger.event else "none" }}
@@ -722,14 +746,16 @@ action:
                   data:
                     brightness_step_pct: !input step_size
                 - delay: !input hold_delay
-```
+```text
 
 ### Accessibility-Focused Blueprints
 
 #### Visual Impairment Blueprint
+
 Specialized blueprint with audio feedback and tactile considerations:
 
 **Features:**
+
 - TTS announcements of brightness levels
 - Haptic feedback via phone notifications
 - Extended hold times for precision
@@ -762,7 +788,7 @@ action:
                 data:
                   haptic: "selection"
         - delay: "{% raw %}{{ hold_delay * 2 }}{% endraw %}"  # Slower for precision
-```
+```cpp
 
 ### Blueprint Ecosystem Analysis
 
@@ -770,7 +796,7 @@ action:
 
 1. **Device-Specific (60% of blueprints)**
    - IKEA TRADFRI: 15+ variations
-   - Philips Hue: 12+ variations  
+   - Philips Hue: 12+ variations
    - Aqara: 8+ variations
    - Generic Zigbee: 10+ variations
 
@@ -788,18 +814,21 @@ action:
 #### Common Blueprint Limitations
 
 **Implementation Issues:**
+
 - **Complexity Variation**: Range from 50-line simple blueprints to 500+ line comprehensive solutions
 - **Device Dependencies**: Most require specific device mappings and protocol knowledge
 - **Configuration Overhead**: Advanced blueprints require 10-20 input parameters
 - **Limited Error Handling**: Few blueprints include robust error recovery
 
 **Functional Limitations:**
+
 - **Timing Inconsistencies**: Default delays range from 100ms to 1000ms across blueprints
 - **No Standardization**: Each blueprint uses different approaches for similar functionality
 - **Protocol Lock-in**: Most blueprints work only with specific integration types
 - **Update Fragility**: Blueprint updates often break existing configurations
 
 **User Experience Issues:**
+
 - **Discovery Problems**: No centralized catalog with quality ratings
 - **Documentation Variance**: Quality of documentation varies significantly
 - **Troubleshooting Difficulty**: Limited debugging tools for blueprint-based automations
@@ -822,22 +851,25 @@ action:
 ### Blueprint Success Stories
 
 #### Community Adoption Metrics
+
 Based on community forum analysis:
 
 - **IKEA TRADFRI Z2M Blueprint**: 2,500+ downloads, 95% satisfaction
-- **Universal Hold-to-Dim**: 1,800+ downloads, 87% satisfaction  
+- **Universal Hold-to-Dim**: 1,800+ downloads, 87% satisfaction
 - **Hue Dimmer Advanced**: 1,200+ downloads, 92% satisfaction
 - **Generic ZHA Dimmer**: 900+ downloads, 78% satisfaction
 
 #### User Feedback Themes
 
 **Positive Feedback:**
+
 - "Finally, dimming that just works out of the box"
 - "Love being able to customize the curve without coding"
 - "Much easier than ControllerX for simple setups"
 - "Great starting point for learning automations"
 
 **Common Complaints:**
+
 - "Still too jerky compared to commercial dimmers"
 - "Had to try 3 different blueprints to find one that worked"
 - "Works great until I restart HA, then needs reconfiguration"
@@ -848,18 +880,21 @@ Based on community forum analysis:
 #### Emerging Trends
 
 **Standardization Efforts:**
+
 - Community push for common input parameter naming
 - Proposal for blueprint quality certification system
 - Development of blueprint testing frameworks
 - Integration with Home Assistant Blueprint Exchange rating system
 
 **Technical Improvements:**
+
 - Native curve support in light entities
 - Reduced latency through direct entity callbacks
 - Integration with adaptive lighting components
 - Matter/Thread protocol support preparation
 
 **User Experience Enhancements:**
+
 - Visual blueprint configuration tools
 - Automated device discovery and mapping
 - Integration with HA device registry for automatic setup
@@ -917,7 +952,7 @@ binary_sensor:
       - lambda: |
           id(dimming_active) = false;
           id(dimming_direction) = 0;
-```
+```text
 
 ### Rotary Encoder Implementations
 
@@ -944,7 +979,7 @@ sensor:
             call.set_brightness(brightness);
             call.perform();
             id(last_encoder_value) = x;
-```
+```text
 
 ### Custom Component Solutions
 
@@ -957,40 +992,41 @@ public:
     void setup() override {
         this->timer_ = new Timer();
     }
-    
+
     void start_dimming(bool up) {
         this->dimming_up_ = up;
         this->timer_->start(100, true, [this]() {
             this->dim_step();
         });
     }
-    
+
     void stop_dimming() {
         this->timer_->stop();
     }
-    
+
 private:
     void dim_step() {
         float current = this->light_->current_values.get_brightness();
         float delta = this->dimming_up_ ? 0.05f : -0.05f;
         float new_brightness = std::max(0.0f, std::min(1.0f, current + delta));
-        
+
         auto call = this->light_->turn_on();
         call.set_brightness(new_brightness);
         call.perform();
     }
-    
+
     Timer* timer_;
     light::LightState* light_;
     bool dimming_up_ = true;
 };
-```
+```text
 
 ## Protocol-Specific Solutions
 
 ### Zigbee Direct Binding
 
 #### Zigbee2MQTT Direct Binding
+
 Users bypass Home Assistant entirely by binding controllers directly to lights:
 
 ```bash
@@ -1000,20 +1036,23 @@ mosquitto_pub -t "zigbee2mqtt/bridge/request/device/bind" -m '{
   "to": "philips_bulb",
   "clusters": ["genLevelCtrl"]
 }'
-```
+```text
 
 **Process:**
+
 1. Controller sends move/stop commands directly to bulb
 2. No Home Assistant involvement in dimming loop
 3. Smooth, responsive dimming with minimal latency
 
 **Limitations:**
+
 - No automation integration
 - No state reporting to Home Assistant
 - Limited to same Zigbee network
 - Complex setup and troubleshooting
 
 #### ZHA Cluster Commands
+
 Direct use of ZHA cluster commands for move/stop:
 
 ```yaml
@@ -1039,11 +1078,12 @@ data:
   cluster_type: in
   command: 3     # Stop command
   command_type: cluster
-```
+```text
 
 ### Z-Wave Direct Commands
 
 #### Z-Wave JS Direct Commands
+
 ```yaml
 # Start level change
 service: zwave_js.invoke_cc_api
@@ -1060,7 +1100,7 @@ service: zwave_js.invoke_cc_api
 data:
   command_class: 38
   method_name: stopLevelChange
-```
+```python
 
 ### Matter Limitations
 
@@ -1083,7 +1123,7 @@ rule "Smooth Dimming" {
         }
     }
 }
-```
+```text
 
 ### OpenHAB Migration
 
@@ -1102,11 +1142,12 @@ then
         }
     }
 end
-```
+```text
 
 ### Custom Hardware Solutions
 
 #### Arduino/ESP-based Controllers
+
 Users create custom hardware with built-in hold-to-dim:
 
 ```cpp
@@ -1122,25 +1163,28 @@ void loop() {
         publishBrightness(brightness);
     }
 }
-```
+```text
 
 ## Analysis and Limitations
 
 ### Common Problems Across All Workarounds
 
 #### Timing and Synchronization Issues
+
 - **Network Latency**: All network-based solutions suffer from variable delays
 - **State Drift**: Light state in Home Assistant may not match actual device state
 - **Race Conditions**: Hold and release events arriving out of order
 - **Jitter**: Inconsistent timing creating jerky dimming experience
 
 #### Complexity and Maintainability
+
 - **High Learning Curve**: Each solution requires specialized knowledge
 - **Fragile Configurations**: Small changes can break functionality entirely
 - **Device-Specific Code**: No universal solution across different hardware
 - **Debug Difficulty**: Hard to troubleshoot timing-sensitive issues
 
 #### Performance Overhead
+
 - **CPU Usage**: Continuous loops and timing operations consume resources
 - **Network Traffic**: Rapid-fire commands can overwhelm networks
 - **Battery Drain**: Inefficient protocols drain device batteries faster
@@ -1149,18 +1193,21 @@ void loop() {
 ### Resource Requirements
 
 #### ControllerX
+
 - **Dependencies**: AppDaemon, Python environment, YAML expertise
 - **Memory**: ~50MB for AppDaemon + ControllerX
 - **CPU**: Continuous Python loops during dimming operations
 - **Complexity**: 100+ lines of configuration for advanced setups
 
 #### Home Assistant Automations
+
 - **Resources**: Minimal additional resource usage
 - **Complexity**: 20-50 lines per dimming direction
 - **Reliability**: Subject to automation engine timing variations
 - **Limitations**: No native state tracking for ongoing operations
 
 #### ESPHome
+
 - **Firmware Size**: Additional 2-5KB for dimming logic
 - **RAM Usage**: Multiple global variables and timers
 - **CPU Overhead**: 100ms interval loops consuming cycles
@@ -1169,6 +1216,7 @@ void loop() {
 ### User Experience Impact
 
 #### Professional Installation Concerns
+
 As noted in community discussions:
 > "I have actually sold a bunch of HA jobs coming up... I literally ripped out Lutron homeworks dimmers because I said this was the way better way."
 
@@ -1177,7 +1225,9 @@ As noted in community discussions:
 This demonstrates the real-world impact on professional adoption and user satisfaction.
 
 #### End User Frustration
+
 Common complaints across all solutions:
+
 - Unreliable operation requiring frequent adjustments
 - Complex setup processes beyond typical user capabilities
 - Inconsistent behavior compared to commercial products
@@ -1199,6 +1249,7 @@ Common complaints across all solutions:
 The extensive array of workarounds documented here demonstrates both the community's ingenuity and the fundamental gap in native light control capabilities. While solutions like ControllerX provide sophisticated functionality and community blueprints offer accessible alternatives, they all require significant expertise and resources to implement and maintain reliably.
 
 Key observations:
+
 1. **No universal solution** works across all protocols and devices
 2. **Complexity scales rapidly** with desired functionality
 3. **Reliability issues** plague all network-based approaches
@@ -1210,3 +1261,4 @@ Key observations:
 The blueprint ecosystem represents significant progress in making hold-to-dim functionality more accessible, with over 50+ community-contributed solutions covering major device types. However, even the most polished blueprints still suffer from the fundamental limitations of implementing continuous control through discrete automation steps.
 
 This analysis strongly supports the need for native move/stop functionality in both Home Assistant and ESPHome, as proposed in the strategy documents. The current workaround landscape creates barriers to adoption and forces users to choose between simplicity and functionality—a choice that shouldn't be necessary for basic lighting control.
+````
