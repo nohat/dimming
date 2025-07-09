@@ -22,72 +22,7 @@ This project proposes a fundamental enhancement to Home Assistant's lighting con
 
 *This documentation contains {{ doc_count() }} pages across 7 main sections (last updated {{ last_updated() }})*
 
-### 🏠 [Current State](current-state/)
-*{{ section_summary("current-state") }}*
-
-| Document | Description |
-|----------|-------------|
-| [Overview](current-state/current_state.md) | Current state of dynamic dimming in Home Assistant |
-| [Community Discussions](current-state/community_discussions.md) | Key community discussions and user feedback |
-| [Challenges & Risks](current-state/challenges.md) | Technical challenges and implementation risks |
-| [Core Contributors](current-state/core_contribs.md) | Key people and teams in lighting control development |
-
-### 🏗️ [Architecture](architecture/)
-*{{ section_summary("architecture") }}*
-
-| Document | Description |
-|----------|-------------|
-| [Core Proposal](architecture/architecture.md) | **Main architectural document** for universal lighting control |
-| [Project Concepts](architecture/pro_concepts.md) | Fundamental concepts and design principles |
-| [Scope & Requirements](architecture/scope.md) | Detailed scope definition and requirements |
-| [Project Plan](architecture/project_plan.md) | High-level timeline and execution strategy |
-
-### ⚡ [Technical Strategy](technical-strategy/)
-*{{ section_summary("technical-strategy") }}*
-
-| Document | Description |
-|----------|-------------|
-| [Home Assistant Strategy](technical-strategy/ha_strategy.md) | **Core integration approach** and LightTransitionManager |
-| [ESPHome Proposal](technical-strategy/esphome_proposal.md) | ESPHome-specific implementation strategy |
-| [ESPHome Strategy](technical-strategy/esphome_strategy.md) | Detailed ESPHome technical approach |
-| [Light State Enhancements](technical-strategy/light_state_enhancements.md) | Proposed light entity state improvements |
-| [Non-linear Dimming](technical-strategy/nonlinear_dimming.md) | Perceptually uniform dimming curves |
-| [Simultaneous Dimming](technical-strategy/simultaneous_dimming.md) | Coordinated multi-light brightness control |
-
-### 🔌 [Integration Guides](integration-guides/)
-*{{ section_summary("integration-guides") }}*
-
-| Document | Description |
-|----------|-------------|
-| [Top Lighting Integrations](integration-guides/top_lighting_integrations.md) | Overview of popular lighting platforms |
-| [Capability Matrix](integration-guides/capability_matrix.md) | **Comprehensive capability comparison** across platforms |
-| [ZHA & Z-Wave](integration-guides/zha_zwave.md) | Zigbee and Z-Wave implementation details |
-| [Zigbee2MQTT](integration-guides/zigbee2mqtt.md) | Zigbee2MQTT integration strategy |
-| [Tasmota](integration-guides/tasmota.md) | Tasmota device integration approach |
-| [Tuya](integration-guides/tuya.md) | Tuya Smart integration patterns |
-
-### 🚧 [Implementation](implementation/)
-*{{ section_summary("implementation") }}*
-
-| Document | Description |
-|----------|-------------|
-| [Engineering Execution](implementation/eng_execution.md) | **Primary implementation roadmap** and development phases |
-| [Execution Plan B](implementation/execution_plan_b.md) | Alternative implementation approach |
-
-### 🚀 [Future Enhancements](future-enhancements/)
-*{{ section_summary("future-enhancements") }}*
-
-| Document | Description |
-|----------|-------------|
-| [Control Mapping](future-enhancements/control_mapping.md) | Advanced control mapping and customization |
-| [Auto-Detected Controller Defaults](future-enhancements/defaults.md) | Intelligent default configuration system |
-
-### 📚 [Resources](resources/)
-*{{ section_summary("resources") }}*
-
-| Document | Description |
-|----------|-------------|
-| [Kickoff Post](resources/kickoff_post.md) | Original community kickoff and discussion links |
+<!-- AUTO_TOC -->
 
 ## 🔗 Key Documents
 
