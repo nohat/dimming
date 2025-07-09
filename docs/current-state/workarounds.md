@@ -40,7 +40,7 @@ framework for implementing hold-to-release dimming through AppDaemon.
 
 #### Standard Light Controller Implementation
 
-````python
+```python
 # Core hold functionality in LightController
 async def _hold(
     self,
@@ -66,7 +66,7 @@ async def hold_loop(self, attribute: str, direction: str, stepper: Stepper) -> b
         self.value_attribute, attribute, direction, stepper,
         extra_attributes=extra_attributes
     )
-```text
+```
 
 #### Z2M Light Controller Implementation
 
@@ -89,7 +89,7 @@ async def release(self) -> None:
     # Sends native Zigbee stop command
     await self._mqtt_call({f"{self.hold_attribute}_move": "stop"})
     self.hold_attribute = None
-```text
+```
 
 ### Device-Specific Mappings
 
@@ -108,7 +108,7 @@ def get_zha_actions_mapping(self) -> DefaultActionsMapping:
         "step_0_1_0_0_0": Light.ON_FULL_BRIGHTNESS,
         "step_1_1_0_0_0": Light.ON_MIN_BRIGHTNESS,
     }
-```text
+```
 
 #### Philips Hue Dimmer Example
 
@@ -128,7 +128,7 @@ def get_z2m_actions_mapping(self) -> DefaultActionsMapping:
         "off_hold": Light.HOLD_COLOR_DOWN,
         "off_hold_release": Light.RELEASE,
     }
-```text
+```
 
 ### Configuration Examples
 
@@ -148,7 +148,7 @@ living_room_dimmer:
     - hold_brightness_up
     - hold_brightness_down
     - release
-```text
+```
 
 #### Advanced Configuration with Custom Timing
 
@@ -173,7 +173,7 @@ advanced_dimmer:
       mode: stop
     "button_1_release":
       action: release
-```text
+```
 
 ### ControllerX Limitations
 
@@ -214,7 +214,7 @@ automation:
               data:
                 brightness_step_pct: 5
             - delay: "00:00:00.2"
-```text
+```
 
 #### Smart Home Junkie Method
 
@@ -276,7 +276,7 @@ automation:
               - service: input_boolean.turn_off
                 target:
                   entity_id: input_boolean.dimming_active
-```text
+```
 
 ### Node-RED Solutions
 
@@ -304,7 +304,7 @@ Node-RED provides visual flow-based dimming solutions:
     "code": "// clearInterval logic"
   }
 ]
-```text
+```
 
 **Advantages:**
 
@@ -346,7 +346,7 @@ light:
           - service: switch.turn_off
             target:
               entity_id: switch.actual_light
-```cpp
+```
 
 ## Blueprint-Based Solutions
 
@@ -429,7 +429,7 @@ automation:
                       brightness_step_pct: 5
                   - delay:
                       milliseconds: "{% raw %}{{ dim_speed }}{% endraw %}"
-```cpp
+```
 
 #### ZHA IKEA TRADFRI Blueprint
 
@@ -478,7 +478,7 @@ action:
                   data:
                     brightness_step_pct: !input step_size
                 - delay: "{% raw %}{{ states('input_number.dim_delay') | int / 1000 }}{% endraw %}"
-```text
+```
 
 ### Philips Hue Dimmer Blueprints
 
@@ -545,7 +545,7 @@ action:
                       {{ [base_step * (1 + acceleration), 20] | min }}{% endraw %}
                 - delay:
                     milliseconds: "{% raw %}{{ [hold_delay - (repeat.index * 10), 50] | max }}{% endraw %}"
-```text
+```
 
 ### Generic Device Blueprints
 
@@ -613,7 +613,7 @@ action:
               {% else %}
                 {{ [current + step * 3, 255] | min }}
               {% endif %}{% endraw %}
-```text
+```
 
 ### Specialized Use Case Blueprints
 
@@ -650,7 +650,7 @@ action:
             transition: "{% raw %}{{ dim_speed / 1000 }}{% endraw %}"
         - delay:
             milliseconds: "{% raw %}{{ dim_speed }}{% endraw %}"
-```cpp
+```
 
 #### Circadian Rhythm Blueprint
 
@@ -689,7 +689,7 @@ action:
           data:
             brightness_step_pct: "{% raw %}{{ 2 if is_night else 5 }}{% endraw %}"
             color_temp: "{% raw %}{{ color_temp }}{% endraw %}"
-```text
+```
 
 ### Multi-Protocol Support Blueprints
 
@@ -753,7 +753,7 @@ action:
                   data:
                     brightness_step_pct: !input step_size
                 - delay: !input hold_delay
-```text
+```
 
 ### Accessibility-Focused Blueprints
 
@@ -795,7 +795,7 @@ action:
                 data:
                   haptic: "selection"
         - delay: "{% raw %}{{ hold_delay * 2 }}{% endraw %}"  # Slower for precision
-```cpp
+```
 
 ### Blueprint Ecosystem Analysis
 
@@ -988,7 +988,7 @@ sensor:
             call.set_brightness(brightness);
             call.perform();
             id(last_encoder_value) = x;
-```text
+```
 
 ### Custom Component Solutions
 
@@ -1028,7 +1028,7 @@ private:
     light::LightState* light_;
     bool dimming_up_ = true;
 };
-```text
+```
 
 ## Protocol-Specific Solutions
 
@@ -1045,7 +1045,7 @@ mosquitto_pub -t "zigbee2mqtt/bridge/request/device/bind" -m '{
   "to": "philips_bulb",
   "clusters": ["genLevelCtrl"]
 }'
-```text
+```
 
 **Process:**
 
@@ -1087,7 +1087,7 @@ data:
   cluster_type: in
   command: 3     # Stop command
   command_type: cluster
-```text
+```
 
 ### Z-Wave Direct Commands
 
@@ -1109,7 +1109,7 @@ service: zwave_js.invoke_cc_api
 data:
   command_class: 38
   method_name: stopLevelChange
-```python
+```
 
 ### Matter Limitations
 
@@ -1133,7 +1133,7 @@ rule "Smooth Dimming" {
         }
     }
 }
-```text
+```
 
 ### OpenHAB Migration
 
@@ -1152,7 +1152,7 @@ then
         }
     }
 end
-```text
+```
 
 ### Custom Hardware Solutions
 
@@ -1173,7 +1173,7 @@ void loop() {
         publishBrightness(brightness);
     }
 }
-```text
+```
 
 ## Analysis and Limitations
 
@@ -1279,4 +1279,5 @@ However, even the most polished blueprints still suffer from the fundamental lim
 This analysis strongly supports the need for native move/stop functionality in both Home Assistant and ESPHome, as proposed in the strategy documents
 .
 The current workaround landscape creates barriers to adoption and forces users to choose between simplicity and functionality—a choice that shouldn't be necessary for basic lighting control.
+
 ````

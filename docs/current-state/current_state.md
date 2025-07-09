@@ -39,7 +39,7 @@ Users must implement complex automations using:
 
 **Example Complexity:**
 
-````yaml
+```yaml
 # Current workaround - complex and unreliable
 automation:
   - alias: "Hold to Dim"
@@ -58,7 +58,7 @@ automation:
               data:
                 brightness_step: -10
             - delay: 0.1
-```text
+```
 
 ### 3. Protocol Capabilities Underutilized
 
@@ -127,7 +127,7 @@ light.turn_on:
   brightness: 128
 
 light.turn_off: {}
-```text
+```
 
 **Missing Services:**
 
@@ -138,7 +138,7 @@ light.start_dimming:
   rate: 50  # brightness units per second
 
 light.stop_dimming: {}
-```text
+```
 
 ### 2. No Dynamic State Tracking
 
@@ -349,4 +349,3 @@ This current state analysis directly informs the requirements and architecture o
 - [Core Architecture Proposal](../architecture/architecture.md)
 - [Technical Strategy](../technical-strategy/ha_strategy.md)
 - [Implementation Plan](../implementation/eng_execution.md)
-````

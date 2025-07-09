@@ -58,7 +58,7 @@ To support move/stop functionality, ESPHome needs:
 
 ### Proposed API Design
 
-````yaml
+```yaml
 # New light actions
 light.move_brightness:
   id: my_light
@@ -69,7 +69,7 @@ light.move_color_temperature:
   id: my_light
   direction: WARMER  # WARMER, COOLER, STOP
   speed: 50K_per_second
-```text
+```
 
 ### Simplified User Configuration
 

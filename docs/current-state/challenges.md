@@ -34,13 +34,12 @@ This document identifies and analyzes the major obstacles that must be overcome 
 
 **Complex Scenarios:**
 
-````yaml
-# Competing control sources
+**Competing control sources:**
+
 - Physical switch pressed while HA automation is dimming
 - Zigbee group commands vs individual device control
 - Cloud-based app control during local dynamic dimming
 - Multiple HA instances controlling the same device
-```text
 
 **State Conflicts:**
 
@@ -266,7 +265,7 @@ light:
       light.problematic_bulb:
         simulation_only: true
         update_frequency: 10
-```text
+```
 
 **Risk Level:** **MEDIUM** - Requires excellent UX design and progressive disclosure
 
@@ -322,7 +321,7 @@ automation:
               data:
                 brightness_step: -10
             - delay: 0.1
-```bash
+```
 
 **Risk Level:** **LOW** - Can be mitigated through migration tools and documentation
 
@@ -488,7 +487,7 @@ experimental:
   dynamic_lighting_control: true
   advanced_dimming_curves: false
   group_dynamic_control: false
-```text
+```
 
 ### 3. Comprehensive Documentation
 
@@ -519,4 +518,5 @@ The proposed architecture provides a path to overcome these challenges systemati
 
 The next phase should focus on detailed technical specifications and proof-of-concept implementations to validate the
 proposed solutions to these challenges.
+
 ````

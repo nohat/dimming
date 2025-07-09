@@ -114,7 +114,7 @@ homeassistant.link_control:
           direction: up
           curve: logarithmic
           speed: medium
-```text
+```
 
 ### PR 2.2: Mapping Storage and Management
 

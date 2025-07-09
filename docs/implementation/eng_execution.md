@@ -60,7 +60,7 @@ To declare granular capabilities for native and simulated dynamic control:
 
 The `light.turn_on` service will be extended to accept a new `dynamic_control` parameter.
 
-````yaml
+```yaml
 # Example light.turn_on service call
 service: light.turn_on
 target:
@@ -75,7 +75,7 @@ data:
     curve: "logarithmic" # Optional: "linear" | "logarithmic" | "s_curve" | "square_law" | { points: [[0,0], [10,1], ...] }
     step_size: 10 # Required for "step": <float_percentage_or_value>
     duration: 5 # Optional for "move"/"step": <float_seconds> (total duration, overrides speed if both)
-```text
+```
 
 **Parameter Breakdown:**
 

@@ -207,13 +207,9 @@ To achieve this vision, I propose the following architectural changes:
          type: "move"
          direction: "up"
          speed: 50 # units per second
-         curve: "logarithmic"
+         curve: "logarithmic"```
 
-```text
-
-````text
-
-        This initiates continuous dimming up at 50 units/second with a logarithmic curve. A subsequent call with `type: "stop"` halts the dimming.
+    This initiates continuous dimming up at 50 units/second with a logarithmic curve. A subsequent call with `type: "stop"` halts the dimming.
 
 2. **New `LightEntityFeature` Flags:**
 
@@ -255,7 +251,7 @@ To achieve this vision, I propose the following architectural changes:
             G --> H
 
             H --> I[Physical Light Device]
-```text
+        ```
 
 4. **Unified `dynamic_state` Attribute:**
 
@@ -378,4 +374,3 @@ Please share your thoughts in the dedicated forum thread (\[link to be created\]
 Let's work together to make Home Assistant's lighting control truly universal, intuitive, and performant.
 
 _(For a more detailed breakdown of the problem, justification, and step-by-step implementation plan, please refer to the accompanying Product Requirements Document (PRD) located at \[Link to your PRD in a separate branch/PR within `home-assistant/architecture` once created\].)_
-````

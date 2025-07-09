@@ -537,7 +537,7 @@ Tuya's `scene_data_v2` API represents a significant advancement in lighting cont
 
 The `scene_data_v2` Data Point (DP) accepts a JSON payload that defines comprehensive lighting transitions:
 
-````json
+```json
 {
   "scene_data_v2": {
     "mode": 1,
@@ -556,7 +556,7 @@ The `scene_data_v2` Data Point (DP) accepts a JSON payload that defines comprehe
     }
   }
 }
-```text
+```
 
 **Key Parameters:**
 
@@ -593,7 +593,7 @@ The `scene_data_v2` Data Point (DP) accepts a JSON payload that defines comprehe
     }
   }
 }
-```text
+```
 
 **Multi-Parameter Synchronized Transition:**
 
@@ -614,7 +614,7 @@ The `scene_data_v2` Data Point (DP) accepts a JSON payload that defines comprehe
     }
   }
 }
-```text
+```
 
 #### 3. Advanced scene_data_v2 Features
 
@@ -649,7 +649,7 @@ The `scene_data_v2` Data Point (DP) accepts a JSON payload that defines comprehe
     ]
   }
 }
-```text
+```
 
 **Color Temperature Sweep:**
 
@@ -672,7 +672,7 @@ The `scene_data_v2` Data Point (DP) accepts a JSON payload that defines comprehe
     }
   }
 }
-```bash
+```
 
 ### B. Move/Stop Style Continuous Dimming Implementation
 
@@ -739,7 +739,7 @@ class TuyaLightEntity(LightEntity):
         # Update state
         self._is_dimming = False
         self._dimming_direction = None
-```text
+```
 
 **Advanced Local Tuya with Raw DP Commands:**
 
@@ -790,7 +790,7 @@ async def _dimming_loop(self, direction: str, rate: int):
         # Check bounds
         if current_brightness <= 10 or current_brightness >= 1000:
             break
-```text
+```
 
 #### 2. Zigbee2MQTT Implementation for Tuya Zigbee Devices
 
@@ -814,7 +814,7 @@ mqtt_publish("zigbee2mqtt/living_room_light/set", {
 mqtt_publish("zigbee2mqtt/living_room_light/set", {
     "brightness_move": 0
 });
-```text
+```
 
 **Tuya-Specific Zigbee Extensions:**
 
@@ -833,7 +833,7 @@ mqtt_publish("zigbee2mqtt/tuya_dimmer/set", {
 mqtt_publish("zigbee2mqtt/tuya_dimmer/set", {
     "tuya_rotate": "stop"   // Stop dimming
 });
-```text
+```
 
 **Home Assistant MQTT Light Integration Update:**
 
@@ -872,7 +872,7 @@ class MqttLight(LightEntity):
             f"{self._command_topic}/set",
             json.dumps({"tuya_rotate": rotate_direction})
         )
-```text
+```
 
 #### 3. Official Tuya Cloud API Implementation
 
@@ -944,7 +944,7 @@ class TuyaCloudLight(LightEntity):
 
         self._is_dimming = False
         self._active_transition = None
-```text
+```
 
 **Approach 2: Rapid Incremental Updates with Rate Limiting**
 
@@ -1102,7 +1102,7 @@ data:
 service: light.stop_dimming
 target:
   entity_id: light.living_room_tuya
-```text
+```
 
 **Advanced scene_data_v2 Service Calls:**
 
@@ -1141,7 +1141,7 @@ data:
           start: 25
           end: 255
           cycles: 1
-```text
+```
 
 ### B. Automation Examples
 
@@ -1176,7 +1176,7 @@ automation:
       - service: light.stop_dimming
         target:
           entity_id: light.living_room_tuya
-```text
+```
 
 **Voice-Controlled Gradual Dimming:**
 
@@ -1211,7 +1211,7 @@ automation:
           entity_id:
             - light.bedroom_main
             - light.bedroom_accent
-```text
+```
 
 **Adaptive Rate Dimming Based on Time:**
 
@@ -1236,7 +1236,7 @@ automation:
             {% raw %}{% else %}{% endraw %}
               50  # Normal dimming during day
             {% raw %}{% endif %}{% endraw %}
-```text
+```
 
 ### C. Integration-Specific Configuration Examples
 
@@ -1271,7 +1271,7 @@ localtuya:
           scene_data_v2: true
           raw_serial_commands: true
           transition_curves: ["linear", "ease-in", "ease-out", "ease-in-out"]
-```text
+```
 
 **Zigbee2MQTT Enhanced Configuration:**
 
@@ -1323,7 +1323,7 @@ light:
         move_up_template: '{"tuya_rotate": "right"}'
         move_down_template: '{"tuya_rotate": "left"}'
         stop_template: '{"tuya_rotate": "stop"}'
-```text
+```
 
 **Official Tuya Integration scene_data_v2 Configuration:**
 
@@ -1409,7 +1409,7 @@ script:
       - service: light.turn_off
         target:
           entity_id: "{{ entity_id }}"
-```text
+```
 
 ### D. Performance Optimization Examples
 
@@ -1453,5 +1453,4 @@ script:
                 entity_id: "{{ entity_id }}"
                 direction: "{{ direction }}"
                 rate: "{{ rate }}"
-```text
-````
+```
